@@ -7,27 +7,27 @@ import {
     Network
 } from "@x402/core/types";
 import { FacilitatorEvmSigner } from "@x402/evm";
-import { parseSignature, verifyTypedData } from "viem";
+import { parseSignature, toHex, verifyTypedData } from "viem";
 
 const REGISTRY_ABI = [
-  {
-    name: "pay",
-    type: "function",
-    stateMutability: "nonpayable",
-    inputs: [
-      { name: "commitment", type: "bytes32" },
-      { name: "from", type: "address" },
-      { name: "to", type: "address" },
-      { name: "value", type: "uint256" },
-      { name: "validAfter", type: "uint256" },
-      { name: "validBefore", type: "uint256" },
-      { name: "nonce", type: "bytes32" },
-      { name: "v", type: "uint8" },
-      { name: "r", type: "bytes32" },
-      { name: "s", type: "bytes32" },
-    ],
-    outputs: [],
-  },
+    {
+        name: "pay",
+        type: "function",
+        stateMutability: "nonpayable",
+        inputs: [
+            { name: "commitment", type: "bytes32" },
+            { name: "from", type: "address" },
+            { name: "to", type: "address" },
+            { name: "value", type: "uint256" },
+            { name: "validAfter", type: "uint256" },
+            { name: "validBefore", type: "uint256" },
+            { name: "nonce", type: "bytes32" },
+            { name: "v", type: "uint8" },
+            { name: "r", type: "bytes32" },
+            { name: "s", type: "bytes32" },
+        ],
+        outputs: [],
+    },
 ] as const;
 
 export class ContentRegistryScheme implements SchemeNetworkFacilitator {
@@ -97,10 +97,14 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
 
     async settle(payload: PaymentPayload, requirements: PaymentRequirements): Promise<SettleResponse> {
         try {
+
             const p = payload.payload as any;
             const auth = p.authorization;
-            const commitment = (p.metadata as any)?.commitment;
 
+            console.log('received the payload ' + JSON.stringify(p))
+
+            // Now this should work!
+            const commitment = (requirements as any).extra?.commitment;
             if (!commitment) throw new Error("Missing commitment in metadata");
             if (!p.signature) throw new Error("Missing signature in payload");
 
@@ -111,7 +115,7 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
                 abi: REGISTRY_ABI,
                 functionName: "pay",
                 args: [
-                    commitment,
+                    toHex(BigInt(commitment)),
                     auth.from,
                     auth.to,
                     BigInt(auth.value),

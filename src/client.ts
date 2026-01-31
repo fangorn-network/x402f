@@ -62,11 +62,12 @@ const fangorn = await Fangorn.init(
 
 // if (true) {
 // step 1. add data to fangorn (merchant)
-const vaultName = "client-vault-test-5";
-// create vault
-const vaultId = await fangorn.createVault(vaultName);
+// const vaultName = "client-vault-test-6";
+// // create vault
+// const vaultId = await fangorn.createVault(vaultName);
+const vaultId = "0xfffaa53aa36eb568d3a7d82c8f9a2ba7d6f09968531143bc6727c307cd9b1516";
 // add data
-const tag = "test0";
+const tag = "test1";
 const price = "0.000001";
 // build manifest
 const manifest = [
@@ -98,7 +99,6 @@ const response = await fetchWithPayment("http://127.0.0.1:4021/resource", {
   body: JSON.stringify({
     vaultId,
     tag,
-    owner: signer.address, // we are purchasing our own data here
   }),
 });
 
@@ -117,4 +117,10 @@ if (response.ok) {
     (name: string) => response.headers.get(name)
   );
   console.log("Payment settled:", paymentResponse);
+  console.log("Attempting to Decrypt!");
+
+  const result = await fangorn.decryptFile(vaultId, tag);
+  const outputAsString = new TextDecoder().decode(result);
+  console.log(`We got the result: ${outputAsString}`)
+
 }

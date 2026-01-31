@@ -2,21 +2,6 @@ import { SettleResponse, VerifyResponse } from "@x402/core/types";
 import { PaymentPayload, PaymentRequirements } from "@x402/fetch";
 import express from "express";
 import { getFacilitator } from "./facilitator";
-// import settleRouter from './settle';
-// import supportRouter from './support';
-// import verifyRouter from './verify';
-
-
-// const app = express();
-
-// app.use(express.json());
-// app.use("/settle", settleRouter);
-// app.use("/supported", supportRouter);
-// app.use("/verify", verifyRouter);
-
-// app.listen(30333, () => {
-//   console.log("Server running on port 30333");
-// });
 
 // Initialize Express app
 const app = express();
@@ -68,7 +53,7 @@ app.post("/verify", async (req, res) => {
  */
 app.post("/settle", async (req, res) => {
   try {
-    const facilitator = await getFacilitator();  
+    const facilitator = await getFacilitator();
     const { paymentPayload, paymentRequirements } = req.body;
 
     if (!paymentPayload || !paymentRequirements) {

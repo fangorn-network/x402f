@@ -2,46 +2,33 @@ import express from "express";
 import { paymentMiddleware } from "@x402/express";
 import { x402ResourceServer, HTTPFacilitatorClient } from "@x402/core/server";
 import type { HTTPRequestContext } from "@x402/core/server";
-import { registerExactEvmScheme } from "@x402/evm/exact/server";
+// Remove this: import { registerExactEvmScheme } from "@x402/evm/exact/server";
 import { createWalletClient, http } from "viem";
-import type { Hex } from "viem";
 import { createLitClient } from "@lit-protocol/lit-client";
 import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
-import { Fangorn } from "fangorn-sdk";
+import { Fangorn, computeTagCommitment } from "fangorn-sdk";
 import { nagaDev } from "@lit-protocol/networks";
+import { FangornEvmScheme } from "./FangornEvmScheme";  // Add this
 
 const app = express();
-
-// Your receiving wallet address
-const payTo = "0x147c24c5Ea2f1EE1ac42AD16820De23bBba45Ef6";
+app.use(express.json());
 
 const getEnv = (key: string) => {
   const value = process.env[key];
-  if (!value) {
-    throw new Error(`Environment variable ${key} is not set`);
-  }
+  if (!value) throw new Error(`Environment variable ${key} is not set`);
   return value;
 };
 
-// Create facilitator client (testnet)
 const facilitatorClient = new HTTPFacilitatorClient({
-  // url: "https://x402.org/facilitator"
   url: "http://localhost:30333"
 });
 
-const rpcUrl = process.env.CHAIN_RPC_URL!;
-if (!rpcUrl) throw new Error("CHAIN_RPC_URL required");
+const rpcUrl = getEnv("CHAIN_RPC_URL");
+const jwt = getEnv("PINATA_JWT");
+const gateway = getEnv("PINATA_GATEWAY");
 
-const jwt = process.env.PINATA_JWT!;
-if (!jwt) throw new Error("PINATA_JWT required");
-
-const gateway = process.env.PINATA_GATEWAY!;
-if (!gateway) throw new Error("PINATA_GATEWAY required");
-
-const delegatorAccount = privateKeyToAccount(
-  getEnv("EVM_PRIVATE_KEY") as `0x${string}`,
-);
+const delegatorAccount = privateKeyToAccount(getEnv("EVM_PRIVATE_KEY") as `0x${string}`);
 
 const delegatorWalletClient = createWalletClient({
   account: delegatorAccount,
@@ -49,80 +36,69 @@ const delegatorWalletClient = createWalletClient({
   chain: baseSepolia,
 });
 
-// Create resource server and register EVM scheme
 const server = new x402ResourceServer(facilitatorClient);
-registerExactEvmScheme(server);
+server.register("eip155:*", new FangornEvmScheme());
 
-// lit client for fangorn... should this be optional?
-const litClient = await createLitClient({
-  network: nagaDev,
-});
-
+const litClient = await createLitClient({ network: nagaDev });
 const domain = "localhost:3000";
 
-const fangorn = await Fangorn.init(
-  jwt,
-  gateway,
-  delegatorWalletClient,
-  litClient,
-  domain,
-);
-
-// 2. OPTIONAL: Add a "Body Debugger" to confirm it's working
-app.use((req, res, next) => {
-  console.log("Pre-Payment check - Method:", req.method, "Body:", req.body);
-  next();
-});
+const fangorn = await Fangorn.init(jwt, gateway, delegatorWalletClient, litClient, domain);
 
 app.use(
   paymentMiddleware(
     {
       "POST /resource": {
+        description: "Accessing protected Fangorn Vault data",
+        mimeType: "application/json",
         accepts: [
           {
             scheme: "exact",
+            network: "eip155:84532",
             price: async (context: HTTPRequestContext) => {
-              if (!context.adapter.getBody) {
-                throw new Error("Adapter does not support body parsing");
-              }
+              const body = context.adapter.getBody?.();
+              const entry = await fangorn.getVaultData(body.vaultId, body.tag);
+              const commitment = await computeTagCommitment(body.vaultId, body.tag);
 
-              const reqBody = context.adapter.getBody();
 
-              console.log(reqBody);
-              // const entry = await fangorn.getVaultData(reqBody.vaultId, reqBody.tag);
-
-              // console.log(`found the entry ${JSON.stringify(entry)}`)
-
-              return "0.00001"; // Return the price string
+              // Convert decimal price to atomic units (USDC has 6 decimals)
+              const decimalPrice = parseFloat(entry.price);
+              const atomicAmount = Math.round(decimalPrice * 1_000_000).toString();
+              // Return AssetAmount with your extra included!
+              return {
+                amount: atomicAmount,
+                asset: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+                extra: {
+                  name: "USDC",
+                  version: "2",
+                  commitment: commitment.toString(),
+                }
+              };
             },
             payTo: async (context: HTTPRequestContext) => {
-              // Access body the same way here
-              const reqBody = context.adapter.getBody?.() as any;
-              // return reqBody?.owner;
-              return payTo;
+              const body = context.adapter.getBody?.();
+              const vault = await fangorn.getVault(body.vaultId);
+              return vault.owner;
             },
-            network: "eip155:84532"
+            maxTimeoutSeconds: 300,
           }
         ],
-        description: "Get current weather data for any location",
-        mimeType: "application/json",
       },
     },
     server,
   ),
 );
 
-// Implement your route
-app.post("/resource", (req, res) => {
-  console.log("Headers:", req.headers);
-  res.send({
-    report: {
-      weather: "sunny",
-      temperature: 70,
-    },
-  });
+app.post("/resource", async (req, res) => {
+  try { 
+    res.send({
+      success: true,
+      report: { weather: "sunny", temperature: 70 }
+    });
+  } catch (error: any) {
+    res.status(500).send({ error: error.message });
+  }
 });
 
 app.listen(4021, () => {
-  console.log(`Server listening at http://localhost:4021`);
+  console.log(`x402 V2 Resource Server listening at http://localhost:4021`);
 });
