@@ -1,8 +1,10 @@
 import express from "express";
 import { paymentMiddleware } from "@x402/express";
 import { x402ResourceServer, HTTPFacilitatorClient } from "@x402/core/server";
+import type { HTTPRequestContext } from "@x402/core/server";
 import { registerExactEvmScheme } from "@x402/evm/exact/server";
 import { createWalletClient, http } from "viem";
+import type { Hex } from "viem";
 import { createLitClient } from "@lit-protocol/lit-client";
 import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
@@ -38,7 +40,7 @@ const gateway = process.env.PINATA_GATEWAY!;
 if (!gateway) throw new Error("PINATA_GATEWAY required");
 
 const delegatorAccount = privateKeyToAccount(
-  getEnv("DELEGATOR_ETH_PRIVATE_KEY") as `0x${string}`,
+  getEnv("EVM_PRIVATE_KEY") as `0x${string}`,
 );
 
 const delegatorWalletClient = createWalletClient({
@@ -51,10 +53,7 @@ const delegatorWalletClient = createWalletClient({
 const server = new x402ResourceServer(facilitatorClient);
 registerExactEvmScheme(server);
 
-// todo: initialize fangorn
-// then we use it to load the manifest, get data, etc.
-// essentially it is the 'storage adapter' 
-// client to interact with LIT proto
+// lit client for fangorn... should this be optional?
 const litClient = await createLitClient({
   network: nagaDev,
 });
@@ -69,6 +68,11 @@ const fangorn = await Fangorn.init(
   domain,
 );
 
+// 2. OPTIONAL: Add a "Body Debugger" to confirm it's working
+app.use((req, res, next) => {
+  console.log("Pre-Payment check - Method:", req.method, "Body:", req.body);
+  next();
+});
 
 app.use(
   paymentMiddleware(
@@ -77,22 +81,28 @@ app.use(
         accepts: [
           {
             scheme: "exact",
-            price: async (request) => {
-              // based on vaultid/tag , we get the manifest and the price
-              const { vaultId, tag, owner } = request.body;
-              const vault = fangorn.getVault(vaultId);
-              // find tagged data within the vault
-              const cid = vault.array.forEach(element => {
-                console.log(cid)
-              });
+            price: async (context: HTTPRequestContext) => {
+              if (!context.adapter.getBody) {
+                throw new Error("Adapter does not support body parsing");
+              }
 
-              // const manigest = fangorn.getManifest(vault);
+              const reqBody = context.adapter.getBody();
 
-              return "$0.00001";
+              console.log(reqBody);
+              // const entry = await fangorn.getVaultData(reqBody.vaultId, reqBody.tag);
+
+              // console.log(`found the entry ${JSON.stringify(entry)}`)
+
+              return "0.00001"; // Return the price string
             },
-            network: "eip155:84532", // Base Sepolia (CAIP-2 format)
-            payTo,
-          },
+            payTo: async (context: HTTPRequestContext) => {
+              // Access body the same way here
+              const reqBody = context.adapter.getBody?.() as any;
+              // return reqBody?.owner;
+              return payTo;
+            },
+            network: "eip155:84532"
+          }
         ],
         description: "Get current weather data for any location",
         mimeType: "application/json",
@@ -103,7 +113,7 @@ app.use(
 );
 
 // Implement your route
-app.get("/resource", (req, res) => {
+app.post("/resource", (req, res) => {
   console.log("Headers:", req.headers);
   res.send({
     report: {

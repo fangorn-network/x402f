@@ -44,6 +44,9 @@ importers:
       fetch:
         specifier: ^1.1.0
         version: 1.1.0
+      pinata:
+        specifier: ^2.5.3
+        version: 2.5.3(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       signer:
         specifier: link:@x402/evm/signer
         version: link:@x402/evm/signer

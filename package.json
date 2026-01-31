@@ -22,7 +22,7 @@
   ],
   "scripts": {
     "build:server": "npx tsc src/resource_server.ts --moduleResolution nodenext --module nodenext --target esnext --skipLibCheck true",
-    "server": "npx ts-node src/resource_server.ts",
+    "server": "npx tsx --env-file=.env src/resource_server.ts",
     "client": "npx tsx --env-file=.env src/client.ts",
     "facilitator": "npx tsx --env-file=.env src/facilitator/server.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -43,6 +43,7 @@
     "express": "^5.2.1",
     "fangorn-sdk": "file:../fangorn",
     "fetch": "^1.1.0",
+    "pinata": "^2.5.3",
     "signer": "link:@x402/evm/signer",
     "types": "link:@x402/evm/types",
     "viem": "^2.45.0"
