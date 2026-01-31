@@ -1,0 +1,55 @@
+{
+  "name": "x402p",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": [
+      "ESNext"
+    ],
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "strict": true,
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "scripts": {
+    "build:server": "npx tsc src/resource_server.ts --moduleResolution nodenext --module nodenext --target esnext --skipLibCheck true",
+    "server": "npx ts-node src/resource_server.ts",
+    "client": "npx tsx --env-file=.env src/client.ts",
+    "facilitator": "npx tsx --env-file=.env src/facilitator/server.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@lit-protocol/lit-client": "^8.3.1",
+    "@lit-protocol/networks": "^8.4.1",
+    "@x402/core": "^2.2.0",
+    "@x402/evm": "^2.2.0",
+    "@x402/express": "^2.2.0",
+    "@x402/fetch": "^2.2.0",
+    "@x402/hono": "^2.2.0",
+    "@x402/next": "^2.2.0",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "fangorn-sdk": "file:../fangorn",
+    "fetch": "^1.1.0",
+    "signer": "link:@x402/evm/signer",
+    "types": "link:@x402/evm/types",
+    "viem": "^2.45.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.1.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
