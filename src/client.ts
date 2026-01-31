@@ -1,19 +1,14 @@
 import { wrapFetchWithPayment } from "@x402/fetch";
 import { x402Client, x402HTTPClient } from "@x402/core/client";
-import { x402ResourceServer, HTTPFacilitatorClient } from "@x402/core/server";
-import type { HTTPRequestContext } from "@x402/core/server";
-import { createWalletClient, http } from "viem";
-import type { Hex } from "viem";
-import { createLitClient } from "@lit-protocol/lit-client";
+import { createWalletClient, http, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
-import { Fangorn } from "fangorn-sdk";
+import { createLitClient } from "@lit-protocol/lit-client";
 import { nagaDev } from "@lit-protocol/networks";
 import { registerExactEvmScheme } from "@x402/evm/exact/client";
-import { takeCoverage } from "node:v8";
+import { Fangorn } from "fangorn-sdk";
 
-
-const getEnv = (key: string) => {
+const getEnv = (key: string): string => {
   const value = process.env[key];
   if (!value) {
     throw new Error(`Environment variable ${key} is not set`);
@@ -21,55 +16,37 @@ const getEnv = (key: string) => {
   return value;
 };
 
-// setup
-// Create signer
-const signer = privateKeyToAccount(process.env.EVM_PRIVATE_KEY as Hex);
+// --- Setup ---
 
-const rpcUrl = process.env.CHAIN_RPC_URL!;
-if (!rpcUrl) throw new Error("CHAIN_RPC_URL required");
+const rpcUrl = getEnv("CHAIN_RPC_URL");
+const jwt = getEnv("PINATA_JWT");
+const gateway = getEnv("PINATA_GATEWAY");
 
-const jwt = process.env.PINATA_JWT!;
-if (!jwt) throw new Error("PINATA_JWT required");
+const account = privateKeyToAccount(getEnv("EVM_PRIVATE_KEY") as Hex);
 
-const gateway = process.env.PINATA_GATEWAY!;
-if (!gateway) throw new Error("PINATA_GATEWAY required");
-
-const delegatorAccount = privateKeyToAccount(
-  getEnv("EVM_PRIVATE_KEY") as `0x${string}`,
-);
-
-const delegatorWalletClient = createWalletClient({
-  account: delegatorAccount,
-  transport: http(rpcUrl),
+const walletClient = createWalletClient({
+  account,
   chain: baseSepolia,
+  transport: http(rpcUrl),
 });
 
-// lit client for fangorn... should this be optional?
 const litClient = await createLitClient({
   network: nagaDev,
 });
 
 const domain = "localhost:3000";
 
-const fangorn = await Fangorn.init(
-  jwt,
-  gateway,
-  delegatorWalletClient,
-  litClient,
-  domain,
-);
+const fangorn = await Fangorn.init(jwt, gateway, walletClient, litClient, domain);
 
+// Step 1 Upload data to Fangorn (merchant)
 
-// if (true) {
-// step 1. add data to fangorn (merchant)
 // const vaultName = "client-vault-test-6";
-// // create vault
 // const vaultId = await fangorn.createVault(vaultName);
 const vaultId = "0xfffaa53aa36eb568d3a7d82c8f9a2ba7d6f09968531143bc6727c307cd9b1516";
-// add data
+
 const tag = "test1";
 const price = "0.000001";
-// build manifest
+
 const manifest = [
   {
     tag,
@@ -79,27 +56,20 @@ const manifest = [
     price,
   },
 ];
+
 await fangorn.upload(vaultId, manifest);
-// }
-// step 2. purchase data (buyer/agent)
 
-// Create x402 client and register EVM scheme
+// Step 2: purchase data
+
 const client = new x402Client();
-registerExactEvmScheme(client, { signer });
+registerExactEvmScheme(client, { signer: account });
 
-// Wrap fetch with payment handling
 const fetchWithPayment = wrapFetchWithPayment(fetch, client);
 
-// Make request - payment is handled automatically
 const response = await fetchWithPayment("http://127.0.0.1:4021/resource", {
   method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    vaultId,
-    tag,
-  }),
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ vaultId, tag }),
 });
 
 const data = await response.json();
@@ -110,17 +80,15 @@ if (response.status === 402) {
   console.log("X-402-Payment-Required:", response.headers);
 }
 
-// Get payment receipt from response headers
 if (response.ok) {
   const httpClient = new x402HTTPClient(client);
   const paymentResponse = httpClient.getPaymentSettleResponse(
     (name: string) => response.headers.get(name)
   );
   console.log("Payment settled:", paymentResponse);
-  console.log("Attempting to Decrypt!");
 
+  console.log("Attempting to decrypt...");
   const result = await fangorn.decryptFile(vaultId, tag);
   const outputAsString = new TextDecoder().decode(result);
-  console.log(`We got the result: ${outputAsString}`)
-
+  console.log(`Decrypted result: ${outputAsString}`);
 }

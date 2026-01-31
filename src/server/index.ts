@@ -92,7 +92,7 @@ app.post("/resource", async (req, res) => {
   try { 
     res.send({
       success: true,
-      report: { weather: "sunny", temperature: 70 }
+      report: { }
     });
   } catch (error: any) {
     res.status(500).send({ error: error.message });

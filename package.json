@@ -22,7 +22,7 @@
   ],
   "scripts": {
     "build:server": "npx tsc src/resource_server.ts --moduleResolution nodenext --module nodenext --target esnext --skipLibCheck true",
-    "server": "npx tsx --env-file=.env src/resource_server.ts",
+    "server": "npx tsx --env-file=.env src/server/index.ts",
     "client": "npx tsx --env-file=.env src/client.ts",
     "facilitator": "npx tsx --env-file=.env src/facilitator/server.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
