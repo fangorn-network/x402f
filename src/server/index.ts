@@ -2,36 +2,32 @@ import express from "express";
 import { paymentMiddleware } from "@x402/express";
 import { x402ResourceServer, HTTPFacilitatorClient } from "@x402/core/server";
 import type { HTTPRequestContext } from "@x402/core/server";
-// Remove this: import { registerExactEvmScheme } from "@x402/evm/exact/server";
 import { createWalletClient, http } from "viem";
 import { createLitClient } from "@lit-protocol/lit-client";
 import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
 import { Fangorn, computeTagCommitment } from "fangorn-sdk";
 import { nagaDev } from "@lit-protocol/networks";
-import { FangornEvmScheme } from "./FangornEvmScheme";  // Add this
+import { FangornEvmScheme } from "./FangornEvmScheme";
+import { getEnv } from "..";
 
 const app = express();
 app.use(express.json());
 
-const getEnv = (key: string) => {
-  const value = process.env[key];
-  if (!value) throw new Error(`Environment variable ${key} is not set`);
-  return value;
-};
-
+// setup
 const facilitatorClient = new HTTPFacilitatorClient({
   url: "http://localhost:30333"
 });
 
+const port = getEnv("SERVER_PORT");
 const rpcUrl = getEnv("CHAIN_RPC_URL");
 const jwt = getEnv("PINATA_JWT");
 const gateway = getEnv("PINATA_GATEWAY");
 
-const delegatorAccount = privateKeyToAccount(getEnv("EVM_PRIVATE_KEY") as `0x${string}`);
+const account = privateKeyToAccount(getEnv("EVM_PRIVATE_KEY") as `0x${string}`);
 
 const delegatorWalletClient = createWalletClient({
-  account: delegatorAccount,
+  account,
   transport: http(rpcUrl),
   chain: baseSepolia,
 });
@@ -89,16 +85,16 @@ app.use(
 );
 
 app.post("/resource", async (req, res) => {
-  try { 
+  try {
     res.send({
       success: true,
-      report: { }
+      report: {}
     });
   } catch (error: any) {
     res.status(500).send({ error: error.message });
   }
 });
 
-app.listen(4021, () => {
-  console.log(`x402 V2 Resource Server listening at http://localhost:4021`);
+app.listen(port, () => {
+  console.log(`x402 V2 Resource Server listening at http://localhost:${port}`);
 });

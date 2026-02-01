@@ -2,11 +2,13 @@ import { SettleResponse, VerifyResponse } from "@x402/core/types";
 import { PaymentPayload, PaymentRequirements } from "@x402/fetch";
 import express from "express";
 import { getFacilitator } from "./facilitator";
+import { getEnv } from "..";
 
 // Initialize Express app
 const app = express();
 app.use(express.json());
 
+const port = getEnv("FACILITATOR_PORT");
 
 /**
  * POST /verify
@@ -112,6 +114,6 @@ app.get("/supported", async (req, res) => {
 });
 
 // Start the server
-app.listen(30333, () => {
-  console.log(`Facilitator listening on port ${30333}`);
+app.listen(port, () => {
+  console.log(`Facilitator listening on port ${port}`);
 });

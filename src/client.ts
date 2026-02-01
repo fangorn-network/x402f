@@ -7,16 +7,9 @@ import { createLitClient } from "@lit-protocol/lit-client";
 import { nagaDev } from "@lit-protocol/networks";
 import { registerExactEvmScheme } from "@x402/evm/exact/client";
 import { Fangorn } from "fangorn-sdk";
+import { getEnv } from ".";
 
-const getEnv = (key: string): string => {
-  const value = process.env[key];
-  if (!value) {
-    throw new Error(`Environment variable ${key} is not set`);
-  }
-  return value;
-};
-
-// --- Setup ---
+// Setup
 
 const rpcUrl = getEnv("CHAIN_RPC_URL");
 const jwt = getEnv("PINATA_JWT");
@@ -40,8 +33,10 @@ const fangorn = await Fangorn.init(jwt, gateway, walletClient, litClient, domain
 
 // Step 1 Upload data to Fangorn (merchant)
 
+// uncomment to create a new vault
 // const vaultName = "client-vault-test-6";
 // const vaultId = await fangorn.createVault(vaultName);
+// note: vaultIds can be easily derived, it's just sha256(name || owner_adress)
 const vaultId = "0xfffaa53aa36eb568d3a7d82c8f9a2ba7d6f09968531143bc6727c307cd9b1516";
 
 const tag = "test1";

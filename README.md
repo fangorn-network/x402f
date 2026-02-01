@@ -20,6 +20,8 @@ Then run the example with
 
 `npm run client`
 
+The example 
+
 
 https://github.com/coinbase/x402/blob/main/docs/getting-started/quickstart-for-sellers.mdx
 
