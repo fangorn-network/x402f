@@ -44,14 +44,14 @@ app.use(
   paymentMiddleware(
     {
       "POST /resource": {
-        description: "Accessing protected Fangorn Vault data",
+        description: "Read fangorn data",
         mimeType: "application/json",
         accepts: [
           {
             scheme: "exact",
             network: "eip155:84532",
             price: async (context: HTTPRequestContext) => {
-              const body = context.adapter.getBody?.();
+              const body = context.adapter.getBody?.() as any;
               const entry = await fangorn.getVaultData(body.vaultId, body.tag);
               const commitment = await computeTagCommitment(body.vaultId, body.tag);
 
@@ -71,7 +71,7 @@ app.use(
               };
             },
             payTo: async (context: HTTPRequestContext) => {
-              const body = context.adapter.getBody?.();
+              const body = context.adapter.getBody?.() as any;
               const vault = await fangorn.getVault(body.vaultId);
               return vault.owner;
             },

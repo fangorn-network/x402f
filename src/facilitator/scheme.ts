@@ -50,7 +50,7 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
             const p = payload.payload as any;
             const auth = p.authorization;
 
-            // 1. Validate that the payload matches what the facilitator expects (USDC details)
+            // validations
             if (BigInt(auth.value) < BigInt(requirements.amount)) {
                 return { isValid: false, invalidReason: "Insufficient amount" };
             }
@@ -62,9 +62,10 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
             const valid = await verifyTypedData({
                 address: auth.from,
                 domain: {
-                    name: "USDC", // Check your specific chain's USDC name (usually "USD Coin")
+                    name: "USDC",
                     version: "2",
-                    chainId: 84532, // Base Sepolia
+                    // base sepolia
+                    chainId: 84532,
                     verifyingContract: this.usdcAddress,
                 },
                 types: {
@@ -97,13 +98,10 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
 
     async settle(payload: PaymentPayload, requirements: PaymentRequirements): Promise<SettleResponse> {
         try {
-
             const p = payload.payload as any;
             const auth = p.authorization;
 
-            console.log('received the payload ' + JSON.stringify(p))
-
-            // Now this should work!
+            // commitment = poseidon2(vaultId, tag)
             const commitment = (requirements as any).extra?.commitment;
             if (!commitment) throw new Error("Missing commitment in metadata");
             if (!p.signature) throw new Error("Missing signature in payload");
@@ -128,7 +126,6 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
                 ],
             });
 
-            // Map the viem hash to the SettleResponse type
             return {
                 success: true,
                 transaction: hash,
