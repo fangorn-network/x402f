@@ -2,11 +2,11 @@ import express from "express";
 import { paymentMiddleware } from "@x402/express";
 import { x402ResourceServer, HTTPFacilitatorClient } from "@x402/core/server";
 import type { HTTPRequestContext } from "@x402/core/server";
-import { createWalletClient, http } from "viem";
+import { createWalletClient, Hex, http } from "viem";
 import { createLitClient } from "@lit-protocol/lit-client";
 import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
-import { Fangorn, computeTagCommitment } from "fangorn-sdk";
+import { AppConfig, Fangorn, computeTagCommitment } from "fangorn-sdk";
 import { nagaDev } from "@lit-protocol/networks";
 import { FangornEvmScheme } from "./FangornEvmScheme";
 import { getEnv } from "..";
@@ -24,6 +24,10 @@ const rpcUrl = getEnv("CHAIN_RPC_URL");
 const jwt = getEnv("PINATA_JWT");
 const gateway = getEnv("PINATA_GATEWAY");
 
+const litActionCid = getEnv("LIT_ACTION_CID");
+const contentRegistryContractAddress = getEnv("CONTENT_REGISTRY_ADDR") as Hex;
+const usdcContractAddress = getEnv("USDC_CONTRACT_ADDR") as Hex;
+
 const account = privateKeyToAccount(getEnv("EVM_PRIVATE_KEY") as `0x${string}`);
 
 const delegatorWalletClient = createWalletClient({
@@ -38,7 +42,17 @@ server.register("eip155:*", new FangornEvmScheme());
 const litClient = await createLitClient({ network: nagaDev });
 const domain = "localhost:3000";
 
-const fangorn = await Fangorn.init(jwt, gateway, delegatorWalletClient, litClient, domain);
+
+const config: AppConfig = {
+  litActionCid: litActionCid,
+  // circuitJsonCid: circuitJsonCid,
+  contentRegistryContractAddress,
+  usdcContractAddress,
+  chainName: "baseSepolia",
+  rpcUrl: rpcUrl,
+};
+
+const fangorn = await Fangorn.init(jwt, gateway, delegatorWalletClient, litClient, domain, config);
 
 app.use(
   paymentMiddleware(
@@ -54,12 +68,10 @@ app.use(
               const body = context.adapter.getBody?.() as any;
               const entry = await fangorn.getVaultData(body.vaultId, body.tag);
               const commitment = await computeTagCommitment(body.vaultId, body.tag);
-
-
               // Convert decimal price to atomic units (USDC has 6 decimals)
               const decimalPrice = parseFloat(entry.price);
               const atomicAmount = Math.round(decimalPrice * 1_000_000).toString();
-              // Return AssetAmount with your extra included!
+
               return {
                 amount: atomicAmount,
                 asset: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
@@ -93,6 +105,13 @@ app.post("/resource", async (req, res) => {
   } catch (error: any) {
     res.status(500).send({ error: error.message });
   }
+});
+
+app.get("/manifest/:vaultId", async (req, res) => {
+  // const manifest = await fangorn.getManifest();
+  const vault = await fangorn.getVault(req.params.vaultId);
+  const manifest = await fangorn.fetchManifest(vault.manifestCid);
+  res.json(manifest);
 });
 
 app.listen(port, () => {
