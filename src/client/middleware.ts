@@ -5,6 +5,7 @@ import { createLitClient, type LitClient } from "@lit-protocol/lit-client";
 import { nagaDev } from "@lit-protocol/networks";
 import { registerExactEvmScheme } from "@x402/evm/exact/client";
 import { AppConfig, Fangorn } from "fangorn-sdk";
+import { PinataSDK } from "pinata";
 
 /**
  * x402's expected signer interface (not exported from package)
@@ -91,11 +92,16 @@ export class FangornX402Middleware {
             network: nagaDev,
         });
 
+        	// storage via Pinata
+		const pinata = new PinataSDK({
+			pinataJwt: this.config.pinataJwt,
+			pinataGateway: this.config.pinataGateway,
+		});
+        
         // Initialize Fangorn
         this.fangorn = await Fangorn.init(
-            this.config.pinataJwt,
-            this.config.pinataGateway,
             this.walletClient,
+            pinata,
             this.litClient,
             this.config.domain ?? "localhost:3000",
             this.config.appConfig

@@ -10,6 +10,8 @@ import { AppConfig, Fangorn, computeTagCommitment } from "fangorn-sdk";
 import { nagaDev } from "@lit-protocol/networks";
 import { FangornEvmScheme } from "./FangornEvmScheme";
 import { getEnv } from "..";
+import { PinataSDK } from "pinata";
+import { Vault } from "fangorn-sdk/lib/interface/contentRegistry";
 
 const app = express();
 app.use(express.json());
@@ -42,21 +44,25 @@ server.register("eip155:*", new FangornEvmScheme());
 const litClient = await createLitClient({ network: nagaDev });
 const domain = "localhost:3000";
 
-// const storageAdapter = await PinataStorageAdapter.init(jwt, gateway);
-
 const config: AppConfig = {
   litActionCid,
   contentRegistryContractAddress,
   usdcContractAddress,
   chainName: "baseSepolia",
-  rpcUrl: rpcUrl,
+  rpcUrl,
 };
 
+// storage via Pinata
+const pinata = new PinataSDK({
+  pinataJwt: jwt,
+  pinataGateway: gateway,
+});
+
 const fangorn = await Fangorn.init(
-  jwt, gateway, 
-  delegatorWalletClient, 
-  litClient, 
-  domain, 
+  delegatorWalletClient,
+  pinata,
+  litClient,
+  domain,
   config
 );
 
@@ -114,8 +120,7 @@ app.post("/resource", async (req, res) => {
 });
 
 app.get("/manifest/:vaultId", async (req, res) => {
-  // const manifest = await fangorn.getManifest();
-  const vault = await fangorn.getVault(req.params.vaultId);
+  const vault: Vault = await fangorn.getVault(req.params.vaultId);
   const manifest = await fangorn.fetchManifest(vault.manifestCid);
   res.json(manifest);
 });
