@@ -42,17 +42,23 @@ server.register("eip155:*", new FangornEvmScheme());
 const litClient = await createLitClient({ network: nagaDev });
 const domain = "localhost:3000";
 
+// const storageAdapter = await PinataStorageAdapter.init(jwt, gateway);
 
 const config: AppConfig = {
-  litActionCid: litActionCid,
-  // circuitJsonCid: circuitJsonCid,
+  litActionCid,
   contentRegistryContractAddress,
   usdcContractAddress,
   chainName: "baseSepolia",
   rpcUrl: rpcUrl,
 };
 
-const fangorn = await Fangorn.init(jwt, gateway, delegatorWalletClient, litClient, domain, config);
+const fangorn = await Fangorn.init(
+  jwt, gateway, 
+  delegatorWalletClient, 
+  litClient, 
+  domain, 
+  config
+);
 
 app.use(
   paymentMiddleware(

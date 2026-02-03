@@ -3,7 +3,7 @@ import { Network } from "@x402/core/types";
 import { toFacilitatorEvmSigner } from "@x402/evm";
 import { ExactEvmScheme } from "@x402/evm/exact/facilitator";
 import { ExactEvmSchemeV1 } from "@x402/evm/exact/v1/facilitator";
-import { createWalletClient, http, publicActions } from "viem";
+import { createWalletClient, Hex, http, publicActions } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
 import { ContentRegistryScheme } from "./scheme";
@@ -15,19 +15,26 @@ import { ContentRegistryScheme } from "./scheme";
  * @returns A configured x402Facilitator instance
  */
 async function createFacilitator(): Promise<x402Facilitator> {
-  // Validate required environment variables
-  if (!process.env.FACILITATOR_EVM_PRIVATE_KEY) {
+
+  const privkey = process.env.FACILITATOR_EVM_PRIVATE_KEY;
+  if (!privkey) {
     throw new Error("❌ FACILITATOR_EVM_PRIVATE_KEY environment variable is required");
   }
 
   // Initialize the EVM account from private key
-  const evmAccount = privateKeyToAccount(process.env.FACILITATOR_EVM_PRIVATE_KEY as `0x${string}`);
+  const evmAccount = privateKeyToAccount(privkey as `0x${string}`);
+
+  // read the contract address 
+  const contractAddress = process.env.CONTENT_REGISTRY_ADDR;
+  if (!contractAddress) {
+    throw new Error("❌ CONTENT_REGISTRY_ADDR environment variable is required");
+  }
 
   // Create a Viem client with both wallet and public capabilities
   const viemClient = createWalletClient({
     account: evmAccount,
     chain: baseSepolia,
-    transport: http(),
+    transport: http(), 
   }).extend(publicActions);
 
   // Initialize the x402 Facilitator with EVM signer
@@ -81,9 +88,9 @@ async function createFacilitator(): Promise<x402Facilitator> {
       "eip155:84532",
       new ContentRegistryScheme(
         evmSigner,
-        "0x11afe8c3d81963bafbb6c259216b914843e44500",
+        contractAddress as Hex,
         // Base Sepolia USDC
-        "0x036CbD53842c5426634e7929541eC2318f3dCF7e" 
+        "0x036CbD53842c5426634e7929541eC2318f3dCF7e"
       )
     )
     .registerExtension("bazaar");
