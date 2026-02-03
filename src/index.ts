@@ -1,3 +1,4 @@
+export * from './client/index.js'
 
 export const getEnv = (key: string): string => {
   const value = process.env[key];
