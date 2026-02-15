@@ -1,7 +1,7 @@
 {
   "name": "x402p",
   "version": "1.0.0",
-  "description": "",
+  "description": "First setup environment variables by running `cp .env.local .env` and filling in the details.",
   "main": "index.js",
   "type": "module",
   "compilerOptions": {
@@ -32,12 +32,11 @@
   "dependencies": {
     "@lit-protocol/lit-client": "^8.3.1",
     "@lit-protocol/networks": "^8.4.1",
-    "@x402/core": "^2.2.0",
-    "@x402/evm": "^2.2.0",
-    "@x402/express": "^2.2.0",
-    "@x402/fetch": "^2.2.0",
-    "@x402/hono": "^2.2.0",
-    "@x402/next": "^2.2.0",
+    "@x402/core": "^2.3.0",
+    "@x402/evm": "^2.3.0",
+    "@x402/express": "^2.3.0",
+    "@x402/fetch": "^2.3.0",
+    "@x402/next": "^2.3.0",
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "fangorn-sdk": "file:../fangorn",
@@ -45,11 +44,23 @@
     "pinata": "^2.5.3",
     "signer": "link:@x402/evm/signer",
     "types": "link:@x402/evm/types",
-    "viem": "^2.45.0"
+    "viem": "^2.45.0",
+    "vitest": "^4.0.18"
   },
   "devDependencies": {
     "@types/node": "^25.1.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
-  }
+  },
+  "directories": {
+    "example": "examples"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fangorn-network/x402f.git"
+  },
+  "bugs": {
+    "url": "https://github.com/fangorn-network/x402f/issues"
+  },
+  "homepage": "https://github.com/fangorn-network/x402f#readme"
 }

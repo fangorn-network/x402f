@@ -7,28 +7,8 @@ import {
     Network
 } from "@x402/core/types";
 import { FacilitatorEvmSigner } from "@x402/evm";
+import { DS_REGISTRY_ABI } from "fangorn-sdk/lib/interface/dataSourceRegistry";
 import { parseSignature, toHex, verifyTypedData } from "viem";
-
-const REGISTRY_ABI = [
-    {
-        name: "pay",
-        type: "function",
-        stateMutability: "nonpayable",
-        inputs: [
-            { name: "commitment", type: "bytes32" },
-            { name: "from", type: "address" },
-            { name: "to", type: "address" },
-            { name: "value", type: "uint256" },
-            { name: "validAfter", type: "uint256" },
-            { name: "validBefore", type: "uint256" },
-            { name: "nonce", type: "bytes32" },
-            { name: "v", type: "uint8" },
-            { name: "r", type: "bytes32" },
-            { name: "s", type: "bytes32" },
-        ],
-        outputs: [],
-    },
-] as const;
 
 export class ContentRegistryScheme implements SchemeNetworkFacilitator {
     readonly scheme = "exact";
@@ -38,11 +18,13 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
         private readonly signer: FacilitatorEvmSigner,
         private readonly registryAddress: `0x${string}`,
         private readonly usdcAddress: `0x${string}`,
-        private readonly network: Network = "eip155:84532" // Default to Base Sepolia
+        private readonly caip2: number,
+        private readonly usdcDomain: string,
+        private readonly network: Network
     ) { }
 
     /**
-     * MANUAL STANDARD VERIFY
+     * MANUAL STANDARD VERIFY 
      * Replicates what x402 does: checks EIP-712 signature + amount/recipient match
      */
     async verify(payload: PaymentPayload, requirements: PaymentRequirements): Promise<VerifyResponse> {
@@ -62,10 +44,9 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
             const valid = await verifyTypedData({
                 address: auth.from,
                 domain: {
-                    name: "USDC",
+                    name: this.usdcDomain,
                     version: "2",
-                    // base sepolia
-                    chainId: 84532,
+                    chainId: this.caip2,
                     verifyingContract: this.usdcAddress,
                 },
                 types: {
@@ -105,12 +86,11 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
             const commitment = (requirements as any).extra?.commitment;
             if (!commitment) throw new Error("Missing commitment in metadata");
             if (!p.signature) throw new Error("Missing signature in payload");
-
             const { v, r, s } = parseSignature(p.signature);
 
             const hash = await this.signer.writeContract({
                 address: this.registryAddress,
-                abi: REGISTRY_ABI,
+                abi: DS_REGISTRY_ABI,
                 functionName: "pay",
                 args: [
                     toHex(BigInt(commitment)),
@@ -133,6 +113,18 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
                 network: this.network,
             };
         } catch (e) {
+            // weird and hacky...
+            const check = e.toString().split(":")[2].split("(")[0].trim();
+
+            if (check === "AlreadyPaid") {
+                return {
+                    success: true,
+                    transaction: "",
+                    payer: this.signer.getAddresses()[0],
+                    network: this.network,
+                };
+            }
+
             return {
                 success: false,
                 errorReason: (e as Error).message,

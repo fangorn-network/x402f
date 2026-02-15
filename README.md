@@ -34,3 +34,11 @@ brainstorming...
 
 https://dev.to/hammertoe/making-services-discoverable-with-erc-8004-trustless-agent-registration-with-filecoin-pin-1al3
 
+
+
+OKAY
+this is getting a little wild but I think what we need to do is modify this
+
+https://github.com/coinbase/x402/blob/main/typescript/packages/http/fetch/src/index.ts#L97
+
+when we createPaymentPayload we need to then ENCRYPT the result as well

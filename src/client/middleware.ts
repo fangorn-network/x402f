@@ -1,11 +1,12 @@
-import { wrapFetchWithPayment } from "@x402/fetch";
 import { x402Client, x402HTTPClient } from "@x402/core/client";
 import type { Hex, WalletClient } from "viem";
 import { createLitClient, type LitClient } from "@lit-protocol/lit-client";
 import { nagaDev } from "@lit-protocol/networks";
 import { registerExactEvmScheme } from "@x402/evm/exact/client";
-import { AppConfig, Fangorn } from "fangorn-sdk";
+import { Fangorn, PinataStorage } from "fangorn-sdk";
 import { PinataSDK } from "pinata";
+import { AppConfig } from "fangorn-sdk/lib/config";
+import { wrapFetchWithPayment } from "@x402/fetch";
 
 /**
  * x402's expected signer interface (not exported from package)
@@ -51,7 +52,7 @@ export interface FangornMiddlewareConfig {
 }
 
 export interface FetchResourceOptions {
-    vaultId: Hex;
+    id: Hex;
     tag: string;
     baseUrl?: string;
     endpoint?: string;
@@ -73,10 +74,14 @@ export class FangornX402Middleware {
     private fetchWithPayment!: typeof fetch;
     private walletClient: WalletClient;
     private litClient!: LitClient;
-    private config: FangornMiddlewareConfig;
+    private storage: PinataStorage;
+    // private config: FangornMiddlewareConfig;
+
+    private config: AppConfig;
+
     private initialized = false;
 
-    constructor(walletClient: WalletClient, config: FangornMiddlewareConfig) {
+    constructor(walletClient: WalletClient, config: AppConfig) {
         if (!walletClient.account) {
             throw new Error("WalletClient must have an account attached");
         }
@@ -84,7 +89,12 @@ export class FangornX402Middleware {
         this.config = config;
     }
 
-    async init(): Promise<this> {
+    async init(
+        config: AppConfig, 
+        domain: string, 
+        pinataJwt: string, 
+        pinataGateway: string,
+    ): Promise<this> {
         if (this.initialized) return this;
 
         // Initialize Lit client
@@ -92,24 +102,25 @@ export class FangornX402Middleware {
             network: nagaDev,
         });
 
-        	// storage via Pinata
-		const pinata = new PinataSDK({
-			pinataJwt: this.config.pinataJwt,
-			pinataGateway: this.config.pinataGateway,
-		});
-        
+        // storage via Pinata
+        const pinata = new PinataSDK({
+            pinataJwt: pinataJwt,
+            pinataGateway: pinataGateway,
+        });
+        const storageAdapter = new PinataStorage(pinata);
+
         // Initialize Fangorn
         this.fangorn = await Fangorn.init(
             this.walletClient,
-            pinata,
+            storageAdapter,
             this.litClient,
-            this.config.domain ?? "localhost:3000",
-            this.config.appConfig
+            domain,
+            config,
         );
 
         // Initialize x402 client with signer adapter
         this.x402Client = new x402Client();
-        registerExactEvmScheme(this.x402Client, { 
+        registerExactEvmScheme(this.x402Client, {
             signer: createSignerFromWallet(this.walletClient)
         });
         this.httpClient = new x402HTTPClient(this.x402Client);
@@ -132,7 +143,7 @@ export class FangornX402Middleware {
         this.ensureInitialized();
 
         const {
-            vaultId,
+            id,
             tag,
             baseUrl = "http://127.0.0.1:4021",
             endpoint = "/resource",
@@ -142,7 +153,7 @@ export class FangornX402Middleware {
             const response = await this.fetchWithPayment(`${baseUrl}${endpoint}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ vaultId, tag }),
+                body: JSON.stringify({ id, tag }),
             });
 
             const data = await response.json();
@@ -161,6 +172,7 @@ export class FangornX402Middleware {
 
             // Process successful response
             if (response.ok || alreadyPaid) {
+
                 let paymentResponse: unknown;
 
                 if (!alreadyPaid) {
@@ -170,7 +182,8 @@ export class FangornX402Middleware {
                 }
 
                 // Decrypt the file
-                const decryptedData = await this.fangorn.decryptFile(vaultId, tag);
+                const decryptedData = await this.fangorn.decryptFile(id, tag);
+                console.log('decrypted data ' + decryptedData)
                 const dataString = new TextDecoder().decode(decryptedData);
 
                 return {
@@ -194,38 +207,38 @@ export class FangornX402Middleware {
         }
     }
 
-    /**
-     * Create a new vault
-     */
-    async createVault(name: string): Promise<Hex> {
-        this.ensureInitialized();
-        return this.fangorn.createVault(name);
-    }
+    // /**
+    //  * Create a new vault
+    //  */
+    // async createVault(name: string): Promise<Hex> {
+    //     this.ensureInitialized();
+    //     return this.fangorn.createVault(name);
+    // }
 
-    /**
-     * Upload files to a vault
-     */
-    async upload(
-        vaultId: Hex,
-        files: Array<{
-            tag: string;
-            data: string;
-            extension: string;
-            fileType: string;
-            price: string;
-        }>
-    ): Promise<void> {
-        this.ensureInitialized();
-        await this.fangorn.upload(vaultId, files);
-    }
+    // /**
+    //  * Upload files to a vault
+    //  */
+    // async upload(
+    //     vaultId: Hex,
+    //     files: Array<{
+    //         tag: string;
+    //         data: string;
+    //         extension: string;
+    //         fileType: string;
+    //         price: string;
+    //     }>
+    // ): Promise<void> {
+    //     this.ensureInitialized();
+    //     await this.fangorn.upload(vaultId, files);
+    // }
 
-    /**
-     * Direct access to underlying Fangorn instance
-     */
-    getFangorn(): Fangorn {
-        this.ensureInitialized();
-        return this.fangorn;
-    }
+    // /**
+    //  * Direct access to underlying Fangorn instance
+    //  */
+    // getFangorn(): Fangorn {
+    //     this.ensureInitialized();
+    //     return this.fangorn;
+    // }
 
     /**
      * Direct access to x402 client
@@ -253,24 +266,27 @@ export class FangornX402Middleware {
 
 export async function createFangornMiddleware(
     walletClient: WalletClient,
-    config: FangornMiddlewareConfig
+    config: AppConfig,
+    domain: string,
+    jwt: string,
+    gateway: string,
 ): Promise<FangornX402Middleware> {
     const middleware = new FangornX402Middleware(walletClient, config);
-    await middleware.init();
+    await middleware.init(config, domain, jwt, gateway);
     return middleware;
 }
 
-export function configFromEnv(getEnv: (key: string) => string): FangornMiddlewareConfig {
-    return {
-        appConfig: {
-            rpcUrl: getEnv("CHAIN_RPC_URL"),
-            litActionCid: getEnv("LIT_ACTION_CID"),
-            contentRegistryContractAddress: getEnv("CONTENT_REGISTRY_ADDR") as Hex,
-            usdcContractAddress: getEnv("USDC_CONTRACT_ADDR") as Hex,
-            chainName: "baseSepolia",
-        },
-        pinataJwt: getEnv("PINATA_JWT"),
-        pinataGateway: getEnv("PINATA_GATEWAY"),
-        domain: getEnv("DOMAIN"),
-    };
-}
+// export function configFromEnv(getEnv: (key: string) => string): FangornMiddlewareConfig {
+//     return {
+//         appConfig: {
+//             rpcUrl: getEnv("CHAIN_RPC_URL"),
+//             litActionCid: getEnv("LIT_ACTION_CID"),
+//             contentRegistryContractAddress: getEnv("CONTENT_REGISTRY_ADDR") as Hex,
+//             usdcContractAddress: getEnv("USDC_CONTRACT_ADDR") as Hex,
+//             chainName: "baseSepolia",
+//         },
+//         pinataJwt: getEnv("PINATA_JWT"),
+//         pinataGateway: getEnv("PINATA_GATEWAY"),
+//         domain: getEnv("DOMAIN"),
+//     };
+// }

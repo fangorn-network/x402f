@@ -2,16 +2,15 @@ import express from "express";
 import { paymentMiddleware } from "@x402/express";
 import { x402ResourceServer, HTTPFacilitatorClient } from "@x402/core/server";
 import type { HTTPRequestContext } from "@x402/core/server";
-import { createWalletClient, Hex, http } from "viem";
+import { createWalletClient, Hex, http, parseUnits } from "viem";
 import { createLitClient } from "@lit-protocol/lit-client";
 import { privateKeyToAccount } from "viem/accounts";
-import { baseSepolia } from "viem/chains";
-import { AppConfig, Fangorn, computeTagCommitment } from "fangorn-sdk";
+import { Fangorn, PinataStorage, computeTagCommitment } from "fangorn-sdk";
 import { nagaDev } from "@lit-protocol/networks";
 import { FangornEvmScheme } from "./FangornEvmScheme";
 import { getEnv } from "..";
 import { PinataSDK } from "pinata";
-import { Vault } from "fangorn-sdk/lib/interface/contentRegistry";
+import { FangornConfig } from "fangorn-sdk/lib/config";
 
 const app = express();
 app.use(express.json());
@@ -21,21 +20,23 @@ const facilitatorClient = new HTTPFacilitatorClient({
   url: "http://localhost:30333"
 });
 
+const config = process.env.CHAIN! === FangornConfig.ArbitrumSepolia.chainName ? 
+  FangornConfig.ArbitrumSepolia : FangornConfig.BaseSepolia;
+
 const port = getEnv("SERVER_PORT");
-const rpcUrl = getEnv("CHAIN_RPC_URL");
 const jwt = getEnv("PINATA_JWT");
 const gateway = getEnv("PINATA_GATEWAY");
 
-const litActionCid = getEnv("LIT_ACTION_CID");
-const contentRegistryContractAddress = getEnv("CONTENT_REGISTRY_ADDR") as Hex;
-const usdcContractAddress = getEnv("USDC_CONTRACT_ADDR") as Hex;
+// const litActionCid = getEnv("LIT_ACTION_CID");
+// const contentRegistryContractAddress = getEnv("CONTENT_REGISTRY_ADDR") as Hex;
+// const usdcContractAddress = getEnv("USDC_CONTRACT_ADDR") as Hex;
 
 const account = privateKeyToAccount(getEnv("EVM_PRIVATE_KEY") as `0x${string}`);
 
 const delegatorWalletClient = createWalletClient({
   account,
-  transport: http(rpcUrl),
-  chain: baseSepolia,
+  transport: http(config.rpcUrl),
+  chain: config.chain,
 });
 
 const server = new x402ResourceServer(facilitatorClient);
@@ -44,26 +45,20 @@ server.register("eip155:*", new FangornEvmScheme());
 const litClient = await createLitClient({ network: nagaDev });
 const domain = "localhost:3000";
 
-const config: AppConfig = {
-  litActionCid,
-  contentRegistryContractAddress,
-  usdcContractAddress,
-  chainName: "baseSepolia",
-  rpcUrl,
-};
-
 // storage via Pinata
 const pinata = new PinataSDK({
   pinataJwt: jwt,
   pinataGateway: gateway,
 });
 
+const storage = new PinataStorage(pinata);
+
 const fangorn = await Fangorn.init(
   delegatorWalletClient,
-  pinata,
+  storage,
   litClient,
   domain,
-  config
+  config,
 );
 
 app.use(
@@ -75,20 +70,20 @@ app.use(
         accepts: [
           {
             scheme: "exact",
-            network: "eip155:84532",
+            network: `eip155:${config.caip2}`,
             price: async (context: HTTPRequestContext) => {
               const body = context.adapter.getBody?.() as any;
-              const entry = await fangorn.getVaultData(body.vaultId, body.tag);
-              const commitment = await computeTagCommitment(body.vaultId, body.tag);
-              // Convert decimal price to atomic units (USDC has 6 decimals)
+              const entry = await fangorn.getDataSourceData(body.id, body.tag);
+              const commitment = await computeTagCommitment(body.id, body.tag);
+              // convert decimal price to atomic units (USDC has 6 decimals)
               const decimalPrice = parseFloat(entry.price);
-              const atomicAmount = Math.round(decimalPrice * 1_000_000).toString();
-
+              const amount = Math.round(decimalPrice * 1_000_000).toString();
+ 
               return {
-                amount: atomicAmount,
-                asset: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+                amount,
+                asset: config.usdcContractAddress,
                 extra: {
-                  name: "USDC",
+                  name: config.usdcDomainName,
                   version: "2",
                   commitment: commitment.toString(),
                 }
@@ -96,7 +91,7 @@ app.use(
             },
             payTo: async (context: HTTPRequestContext) => {
               const body = context.adapter.getBody?.() as any;
-              const vault = await fangorn.getVault(body.vaultId);
+              const vault = await fangorn.getDataSource(body.id);
               return vault.owner;
             },
             maxTimeoutSeconds: 300,
@@ -110,6 +105,7 @@ app.use(
 
 app.post("/resource", async (req, res) => {
   try {
+    // TODO: should we send back a signature? pow?
     res.send({
       success: true,
       report: {}
@@ -119,12 +115,6 @@ app.post("/resource", async (req, res) => {
   }
 });
 
-app.get("/manifest/:vaultId", async (req, res) => {
-  const vault: Vault = await fangorn.getVault(req.params.vaultId);
-  const manifest = await fangorn.fetchManifest(vault.manifestCid);
-  res.json(manifest);
-});
-
 app.listen(port, () => {
-  console.log(`x402 V2 Resource Server listening at http://localhost:${port}`);
+  console.log(`x402f Resource Server listening at http://localhost:${port}`);
 });

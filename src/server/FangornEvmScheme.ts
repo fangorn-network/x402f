@@ -7,10 +7,10 @@ export class FangornEvmScheme extends ExactEvmScheme {
         supportedKind: any,
         facilitatorExtensions: string[]
     ): Promise<PaymentRequirements> {
-        // Save your original extra (with commitment)
+        // store original extra (with commitment)
         const originalExtra = (requirements as any).extra;
 
-        // Let the base class add EIP-712 info
+        // add EIP-712 info
         const enhanced = await super.enhancePaymentRequirements(
             requirements,
             supportedKind,
@@ -18,7 +18,8 @@ export class FangornEvmScheme extends ExactEvmScheme {
         );
 
         (enhanced as any).extra = {
-            ...(enhanced as any).extra,   // EIP-712: { name: "USDC", version: "2" }
+            // EIP-712: { name: "USDC", version: "2" }
+            ...(enhanced as any).extra,
             ...originalExtra,
         };
 

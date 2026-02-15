@@ -17,8 +17,9 @@ const port = getEnv("FACILITATOR_PORT");
  * Note: Payment tracking and bazaar discovery are handled by lifecycle hooks
  */
 app.post("/verify", async (req, res) => {
+
   try {
-    const facilitator = await getFacilitator();  
+    const facilitator = await getFacilitator();
     const { paymentPayload, paymentRequirements } = req.body as {
       paymentPayload: PaymentPayload;
       paymentRequirements: PaymentRequirements;
@@ -38,6 +39,8 @@ app.post("/verify", async (req, res) => {
       paymentRequirements,
     );
 
+    console.log('payment verified ' + JSON.stringify(response));
+    
     res.json(response);
   } catch (error) {
     console.error("Verify error:", error);
@@ -102,7 +105,7 @@ app.post("/settle", async (req, res) => {
  */
 app.get("/supported", async (req, res) => {
   try {
-    const facilitator = await getFacilitator();  
+    const facilitator = await getFacilitator();
     const response = facilitator.getSupported();
     res.json(response);
   } catch (error) {
