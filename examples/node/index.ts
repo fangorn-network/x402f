@@ -1,6 +1,5 @@
-import { Chain, createWalletClient, http, type Hex } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
-import { arbitrumSepolia, baseSepolia } from "viem/chains";
+import { createWalletClient, http, type Hex } from "viem";
+import { Address, privateKeyToAccount } from "viem/accounts";
 import { getEnv } from "../../src";
 import { createFangornMiddleware } from "../../src/client/middleware";
 import { atob } from "node:buffer";
@@ -33,11 +32,14 @@ async function nodeExample() {
         pinataGateway
     );
 
-    const id = "0xb4e0ae3e26372b1f07cad47f1c6c813c991ab72e415986c074d32af7a9b019f2" as Hex;
-    const tag = "test.txt";
+    // 0x147c24c5Ea2f1EE1ac42AD16820De23bBba45Ef6
+    const owner = "0x147c24c5Ea2f1EE1ac42AD16820De23bBba45Ef6" as Address; 
+    const datasourceName = "218";
+    const tag = "helloFangorn.txt";
 
     const result = await middleware.fetchResource({
-        id,
+        owner,
+        datasourceName,
         tag,
         baseUrl: `${resourceServerHost}:${resourceServerPort}`,
     });

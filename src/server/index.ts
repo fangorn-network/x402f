@@ -5,22 +5,26 @@ import type { HTTPRequestContext } from "@x402/core/server";
 import { createWalletClient, Hex, http, parseUnits } from "viem";
 import { createLitClient } from "@lit-protocol/lit-client";
 import { privateKeyToAccount } from "viem/accounts";
-import { Fangorn, PinataStorage, computeTagCommitment } from "fangorn-sdk";
+import { Fangorn, LitEncryptionService, PinataStorage } from "fangorn-sdk";
 import { nagaDev } from "@lit-protocol/networks";
 import { FangornEvmScheme } from "./FangornEvmScheme";
 import { getEnv } from "..";
 import { PinataSDK } from "pinata";
 import { FangornConfig } from "fangorn-sdk/lib/config";
+import { computeTagCommitment } from "fangorn-sdk/lib/utils";
 
 const app = express();
 app.use(express.json());
 
 // setup
+// TOOO: read from env vars
 const facilitatorClient = new HTTPFacilitatorClient({
   url: "http://localhost:30333"
 });
 
-const config = process.env.CHAIN! === FangornConfig.ArbitrumSepolia.chainName ? 
+const usdcDomainName = process.env.USDC_DOMAIN_NAME!;
+
+const config = process.env.CHAIN! === FangornConfig.ArbitrumSepolia.chainName ?
   FangornConfig.ArbitrumSepolia : FangornConfig.BaseSepolia;
 
 const port = getEnv("SERVER_PORT");
@@ -29,7 +33,7 @@ const gateway = getEnv("PINATA_GATEWAY");
 
 // const litActionCid = getEnv("LIT_ACTION_CID");
 // const contentRegistryContractAddress = getEnv("CONTENT_REGISTRY_ADDR") as Hex;
-// const usdcContractAddress = getEnv("USDC_CONTRACT_ADDR") as Hex;
+// const usdcContractAddress = getEnv("USDC_CONTRACT_ADDR") as Hex;/
 
 const account = privateKeyToAccount(getEnv("EVM_PRIVATE_KEY") as `0x${string}`);
 
@@ -43,6 +47,10 @@ const server = new x402ResourceServer(facilitatorClient);
 server.register("eip155:*", new FangornEvmScheme());
 
 const litClient = await createLitClient({ network: nagaDev });
+const encryptionService = new LitEncryptionService(litClient, {
+  chainName: config.chainName,
+});
+
 const domain = "localhost:3000";
 
 // storage via Pinata
@@ -56,7 +64,7 @@ const storage = new PinataStorage(pinata);
 const fangorn = await Fangorn.init(
   delegatorWalletClient,
   storage,
-  litClient,
+  encryptionService,
   domain,
   config,
 );
@@ -73,17 +81,19 @@ app.use(
             network: `eip155:${config.caip2}`,
             price: async (context: HTTPRequestContext) => {
               const body = context.adapter.getBody?.() as any;
-              const entry = await fangorn.getDataSourceData(body.id, body.tag);
-              const commitment = await computeTagCommitment(body.id, body.tag);
+              const entry = await fangorn.getDataSourceData(body.owner, body.name, body.tag);
+              // extract the price from the predicate descriptor
+              const price = entry.predicateDescriptor.params!.price as string;
+              const commitment = await computeTagCommitment(body.owner, body.name, body.tag, price);
               // convert decimal price to atomic units (USDC has 6 decimals)
-              const decimalPrice = parseFloat(entry.price);
+              const decimalPrice = parseFloat(price);
               const amount = Math.round(decimalPrice * 1_000_000).toString();
- 
+
               return {
                 amount,
                 asset: config.usdcContractAddress,
                 extra: {
-                  name: config.usdcDomainName,
+                  name: usdcDomainName,
                   version: "2",
                   commitment: commitment.toString(),
                 }
@@ -91,7 +101,7 @@ app.use(
             },
             payTo: async (context: HTTPRequestContext) => {
               const body = context.adapter.getBody?.() as any;
-              const vault = await fangorn.getDataSource(body.id);
+              const vault = await fangorn.getDataSource(body.owner, body.name);
               return vault.owner;
             },
             maxTimeoutSeconds: 300,
@@ -116,5 +126,20 @@ app.post("/resource", async (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`x402f Resource Server listening at http://localhost:${port}`);
+  function printStartupHeader(port = "3000") {
+    const cyber = `
+  ╔═══════════════════════════════════════════════╗
+  ║                                               ║
+  ║   ▀▄▀ █░█ █▀█ ▀█ █▀▀   RESOURCE SERVER        ║
+  ║   █░█ ▀▀█ █▄█ █▄ █▀    ═══════════════════    ║
+  ║                                               ║
+  ╚═══════════════════════════════════════════════╝
+  
+    * LISTENING ON PORT: ${port}                                 
+`;
+
+    console.log(cyber)
+  }
+
+  printStartupHeader(port)
 });

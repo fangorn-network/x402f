@@ -7,8 +7,8 @@ import {
     Network
 } from "@x402/core/types";
 import { FacilitatorEvmSigner } from "@x402/evm";
-import { DS_REGISTRY_ABI } from "fangorn-sdk/lib/interface/dataSourceRegistry";
-import { parseSignature, toHex, verifyTypedData } from "viem";
+import { fieldToHex, SETTLEMENT_TRACKER_ABI } from "fangorn-sdk";
+import { Hex, parseSignature, toHex, verifyTypedData } from "viem";
 
 export class ContentRegistryScheme implements SchemeNetworkFacilitator {
     readonly scheme = "exact";
@@ -16,8 +16,8 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
 
     constructor(
         private readonly signer: FacilitatorEvmSigner,
-        private readonly registryAddress: `0x${string}`,
-        private readonly usdcAddress: `0x${string}`,
+        private readonly settlementTrackerAddress: Hex,
+        private readonly usdcAddress: Hex,
         private readonly caip2: number,
         private readonly usdcDomain: string,
         private readonly network: Network
@@ -88,12 +88,16 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
             if (!p.signature) throw new Error("Missing signature in payload");
             const { v, r, s } = parseSignature(p.signature);
 
+            console.log('the commitment ' + fieldToHex(BigInt(commitment)))
+            console.log('amount = ' + BigInt(auth.value));
+            console.log('from ' + auth.from)
+
             const hash = await this.signer.writeContract({
-                address: this.registryAddress,
-                abi: DS_REGISTRY_ABI,
+                address: this.settlementTrackerAddress,
+                abi: SETTLEMENT_TRACKER_ABI,
                 functionName: "pay",
                 args: [
-                    toHex(BigInt(commitment)),
+                    fieldToHex(BigInt(commitment)),
                     auth.from,
                     auth.to,
                     BigInt(auth.value),
@@ -105,6 +109,8 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
                     s,
                 ],
             });
+
+            console.log('hash ' + hash)
 
             return {
                 success: true,

@@ -13,20 +13,17 @@ import { AppConfig, FangornConfig } from "fangorn-sdk/lib/config";
  * Initialize and configure the x402 facilitator with EVM and SVM support
  * This is called lazily on first use to support Next.js module loading
  *
- *  `caip2`: The CAIP-2 identifier for the network
- *  `chain`: The Chain struct
- *  `network`: The network name for x402 e.g. "base-sepo lia" as Network for Base Sepolia
+ *  `config`: The Fangorn app config
+ *  `network`: The network name for x402 e.g. `${"base-sepolia" as Network}` for Base Sepolia
+ * `evmAccount`: The EVM account to use
  * 
- * z@returns A configured x402Facilitator instance
+ * @returns A configured x402Facilitator instance
  */
 async function createFacilitator(
-	// caip2: number,
 	config: AppConfig,
 	network: Network,
-	// chain: Chain,
 	evmAccount: Account,
-	// contractAddress: Address,
-	// usdcContractAddress: Address
+	usdcDomainName: string,
 ): Promise<x402Facilitator> {
 	// Create a Viem client with both wallet and public capabilities
 	const viemClient = createWalletClient({
@@ -85,16 +82,16 @@ async function createFacilitator(
 			`eip155:${config.caip2}`,
 			new ContentRegistryScheme(
 				evmSigner,
-				config.dataSourceRegistryContractAddress,
-				// Base Sepolia USDC
+				// settlement tracker address
+				"0xb32ed201896ba765e6aa118a5c18c263f559474e" as Address,
 				config.usdcContractAddress,
 				// "0x036CbD53842c5426634e7929541eC2318f3dCF7e"
 				config.caip2,
-				config.usdcDomainName,
+				usdcDomainName,
 				`eip155:${config.caip2}`
 			)
-		)
-		.registerExtension("bazaar");
+		);
+		// .registerExtension("bazaar");
 
 	return facilitator;
 }
@@ -109,18 +106,20 @@ let _facilitatorPromise: Promise<x402Facilitator> | null = null;
  * @returns A promise that resolves to the configured facilitator
  */
 export async function getFacilitator(): Promise<x402Facilitator> {
-	if (!_facilitatorPromise) {
 
+	if (!_facilitatorPromise) {
 		const privkey = process.env.FACILITATOR_EVM_PRIVATE_KEY;
 		if (!privkey) {
 			throw new Error("❌ FACILITATOR_EVM_PRIVATE_KEY environment variable is required");
 		}
 
+		const usdcDomainName = process.env.USDC_DOMAIN_NAME!;
 		const chainName = process.env.CHAIN!
 
 		// Initialize the EVM account from private key
 		const evmAccount = privateKeyToAccount(privkey as `0x${string}`);
 
+		// TODO: how can we ensure the facilitator can support multiple networks?
 		// default to arbitrum
 		let config = FangornConfig.ArbitrumSepolia;
 		let networkString = "arbitrum-sepolia";
@@ -130,13 +129,13 @@ export async function getFacilitator(): Promise<x402Facilitator> {
 			config = FangornConfig.BaseSepolia;
 		}
 
-		console.log('chain name ' + chainName)
-
 		_facilitatorPromise = createFacilitator(
 			config,
 			networkString as Network,
 			evmAccount,
+			usdcDomainName,
 		);
 	}
+
 	return _facilitatorPromise;
 }

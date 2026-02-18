@@ -39,8 +39,6 @@ app.post("/verify", async (req, res) => {
       paymentRequirements,
     );
 
-    console.log('payment verified ' + JSON.stringify(response));
-    
     res.json(response);
   } catch (error) {
     console.error("Verify error:", error);
@@ -118,5 +116,21 @@ app.get("/supported", async (req, res) => {
 
 // Start the server
 app.listen(port, () => {
-  console.log(`Facilitator listening on port ${port}`);
+  // Cyberpunk variant
+  function printStartupHeader(port = "3000") {
+    const cyber = `
+  ╔═══════════════════════════════════════════════╗
+  ║                                               ║
+  ║   ▀▄▀ █░█ █▀█ ▀█ █▀▀   FACILITATOR            ║
+  ║   █░█ ▀▀█ █▄█ █▄ █▀    ═══════════════════    ║
+  ║                                               ║
+  ╚═══════════════════════════════════════════════╝
+  
+    * LISTENING ON PORT: ${port}                               
+`;
+
+    console.log(cyber)
+  }
+
+  printStartupHeader(port)
 });
