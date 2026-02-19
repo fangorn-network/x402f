@@ -37,6 +37,43 @@ const gateway = getEnv("PINATA_GATEWAY");
 
 const account = privateKeyToAccount(getEnv("EVM_PRIVATE_KEY") as `0x${string}`);
 
+const agentCard =   {                                                                        
+    "capabilities": {                                                      
+      "streaming": false,                                                  
+      "pushNotifications": false,                                          
+      "stateTransitionHistory": false                                      
+    },                                                                     
+    "defaultInputModes": [                                                 
+      "text/plain",                                                        
+      "application/json"                                                   
+    ],                                                                     
+    "defaultOutputModes": [                                                
+      "text/plain",                                                        
+      "application/json"                                                   
+    ],                                                                     
+    "skills": [                                                            
+      {                                                                    
+        "id": "obtain-test-text-data",                                     
+        "name": "Obtain test text data",                                   
+        "description": "This advertises that this agent serves test text data via a resource server",                                             
+        "tags": [                                                          
+          "test",                                                          
+          "text",                                                          
+          "x402f",                                                         
+          "datasource"                                                     
+        ]                                                                  
+      }                                                                    
+    ],                                                                     
+    "name": "local-testfile-agent",                                        
+    "description": "This is the best datasource agent for receiving test text files",                                                             
+    "version": "0.0.1",                                                    
+    "url": "http://localhost:4021",                                        
+    "provider": {                                                          
+      "organization": "Fangorn",                                           
+      "url": "https://fangorn.network"                                     
+    }                                                                      
+  }           
+
 const delegatorWalletClient = createWalletClient({
   account,
   transport: http(config.rpcUrl),
@@ -124,6 +161,11 @@ app.post("/resource", async (req, res) => {
     res.status(500).send({ error: error.message });
   }
 });
+
+app.get("/.well-known/agent-card.json", async (req, res)=> {
+  res.status(200).json(agentCard);
+
+}) 
 
 app.listen(port, () => {
   function printStartupHeader(port = "3000") {
