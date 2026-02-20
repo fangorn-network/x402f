@@ -85,13 +85,11 @@ async function createFacilitator(
 				// settlement tracker address
 				"0xb32ed201896ba765e6aa118a5c18c263f559474e" as Address,
 				config.usdcContractAddress,
-				// "0x036CbD53842c5426634e7929541eC2318f3dCF7e"
 				config.caip2,
 				usdcDomainName,
 				`eip155:${config.caip2}`
 			)
 		);
-		// .registerExtension("bazaar");
 
 	return facilitator;
 }
@@ -119,7 +117,7 @@ export async function getFacilitator(): Promise<x402Facilitator> {
 		// Initialize the EVM account from private key
 		const evmAccount = privateKeyToAccount(privkey as `0x${string}`);
 
-		// TODO: how can we ensure the facilitator can support multiple networks?
+		// TODO: can the facilitator can support multiple networks?
 		// default to arbitrum
 		let config = FangornConfig.ArbitrumSepolia;
 		let networkString = "arbitrum-sepolia";

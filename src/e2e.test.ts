@@ -24,16 +24,14 @@ describe("x402f e2e test", () => {
 	}, 120_000); // 2 minute timeout
 
 	// afterall => cleanup (unpin files)
-	it("should create a vault with data and succeed to decrypt when the payment is settled", async () => {
+	it("should succeed to decrypt when the payment is settled", async () => {
+		// start facilitator
+		
+		// start server
 
+		// publish data
+
+		// run client example	
+		
     });
 });
-
-
-
-
-// deploy contract + lit action
-// start facilitator
-// start server
-// publish data
-// run client example

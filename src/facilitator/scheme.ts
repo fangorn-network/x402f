@@ -40,7 +40,7 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
                 return { isValid: false, invalidReason: "Recipient mismatch" };
             }
 
-            // 2. Verify the EIP-3009 Signature (The "Standard" part)
+            // Verify the EIP-3009 Signature
             const valid = await verifyTypedData({
                 address: auth.from,
                 domain: {
@@ -77,20 +77,21 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
         }
     }
 
+    /**
+     * Settle the payment
+     * @param payload 
+     * @param requirements 
+     * @returns 
+     */
     async settle(payload: PaymentPayload, requirements: PaymentRequirements): Promise<SettleResponse> {
         try {
             const p = payload.payload as any;
             const auth = p.authorization;
 
-            // commitment = poseidon2(vaultId, tag)
             const commitment = (requirements as any).extra?.commitment;
             if (!commitment) throw new Error("Missing commitment in metadata");
             if (!p.signature) throw new Error("Missing signature in payload");
             const { v, r, s } = parseSignature(p.signature);
-
-            console.log('the commitment ' + fieldToHex(BigInt(commitment)))
-            console.log('amount = ' + BigInt(auth.value));
-            console.log('from ' + auth.from)
 
             const hash = await this.signer.writeContract({
                 address: this.settlementTrackerAddress,
@@ -110,8 +111,6 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
                 ],
             });
 
-            console.log('hash ' + hash)
-
             return {
                 success: true,
                 transaction: hash,
@@ -119,18 +118,6 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
                 network: this.network,
             };
         } catch (e) {
-            // weird and hacky...
-            const check = e.toString().split(":")[2].split("(")[0].trim();
-
-            if (check === "AlreadyPaid") {
-                return {
-                    success: true,
-                    transaction: "",
-                    payer: this.signer.getAddresses()[0],
-                    network: this.network,
-                };
-            }
-
             return {
                 success: false,
                 errorReason: (e as Error).message,

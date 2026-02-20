@@ -31,10 +31,6 @@ const port = getEnv("SERVER_PORT");
 const jwt = getEnv("PINATA_JWT");
 const gateway = getEnv("PINATA_GATEWAY");
 
-// const litActionCid = getEnv("LIT_ACTION_CID");
-// const contentRegistryContractAddress = getEnv("CONTENT_REGISTRY_ADDR") as Hex;
-// const usdcContractAddress = getEnv("USDC_CONTRACT_ADDR") as Hex;/
-
 const account = privateKeyToAccount(getEnv("EVM_PRIVATE_KEY") as `0x${string}`);
 
 const delegatorWalletClient = createWalletClient({
@@ -83,7 +79,7 @@ app.use(
               const body = context.adapter.getBody?.() as any;
               const entry = await fangorn.getDataSourceData(body.owner, body.name, body.tag);
               // extract the price from the predicate descriptor
-              const price = entry.predicateDescriptor.params!.price as string;
+              const price = entry.gadgetDescriptor.params!.price as string;
               const commitment = await computeTagCommitment(body.owner, body.name, body.tag, price);
               // convert decimal price to atomic units (USDC has 6 decimals)
               const decimalPrice = parseFloat(price);
@@ -115,7 +111,6 @@ app.use(
 
 app.post("/resource", async (req, res) => {
   try {
-    // TODO: should we send back a signature? pow?
     res.send({
       success: true,
       report: {}
@@ -127,7 +122,7 @@ app.post("/resource", async (req, res) => {
 
 app.listen(port, () => {
   function printStartupHeader(port = "3000") {
-    const cyber = `
+    const header = `
   ╔═══════════════════════════════════════════════╗
   ║                                               ║
   ║   ▀▄▀ █░█ █▀█ ▀█ █▀▀   RESOURCE SERVER        ║
@@ -138,7 +133,7 @@ app.listen(port, () => {
     * LISTENING ON PORT: ${port}                                 
 `;
 
-    console.log(cyber)
+    console.log(header)
   }
 
   printStartupHeader(port)

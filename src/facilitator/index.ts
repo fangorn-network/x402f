@@ -116,9 +116,8 @@ app.get("/supported", async (req, res) => {
 
 // Start the server
 app.listen(port, () => {
-  // Cyberpunk variant
   function printStartupHeader(port = "3000") {
-    const cyber = `
+    const header = `
   ╔═══════════════════════════════════════════════╗
   ║                                               ║
   ║   ▀▄▀ █░█ █▀█ ▀█ █▀▀   FACILITATOR            ║
@@ -129,7 +128,7 @@ app.listen(port, () => {
     * LISTENING ON PORT: ${port}                               
 `;
 
-    console.log(cyber)
+    console.log(header)
   }
 
   printStartupHeader(port)

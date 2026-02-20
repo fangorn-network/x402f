@@ -1,44 +1,47 @@
 # x402f 
 
+Pay-per-use data APIs without trusting the server.
+
+x402f is an extension of the x402 protocol that inverts the trust model: the server never holds a plaintext, never handles payments, and cannot withhold data (even if offline). 
+
+-> See the [node client example](./examples/node/index.ts)
+
+## How it Works
+
+![alt text](image.png)
+
 ## Setup
 
 First setup environment variables by running `cp .env.local .env` and filling in the details.
 
 ## Start the Facilitator
 
+Start the facilitator first. This will run on localhost:30333
+
 `npm run facilitator`
 
 ## start the server
 
+Start the resource server once the faciltiator is running. This will run on localhost:4021
+
 `npm run server`
 
-## run the client example
+## run the node client example
 
-install tsx  with `npm install -D tsx`
+First install tsx with `npm install -D tsx`. Then run the example with `npm run client:node`.
 
-Then run the example with
+For data **consumers**: 
+- You *start* with a ciphertext before making a payment, which is decrypted locally. This also ensures data cannot be withheld post-purchase.
+- Pricing and ownership is verifiable against the finalized chain state.
 
-`npm run client`
+For data **sellers**:
+- You do not need to support any infrastructure at all to use the solution, as it only needs one resource server. However, anybody can run their own dedicated resource server if they choose (there can be multiple, but don't need to be).
+- You can dynamically price data without trusting the server or making code changes.
 
-The example 
+## Architecture
 
+It uses [fangorn](https://github.com/fangorn-network/fangorn) 
 
-https://github.com/coinbase/x402/blob/main/docs/getting-started/quickstart-for-sellers.mdx
+## License 
 
-https://github.com/coinbase/x402/tree/b8fcea79b06b19fb20874d6fde7cef1df20af6f0/typescript/packages/core
-
-https://github.com/coinbase/x402/blob/0db3e2953e8921d8cb14386baa458449f67f1bd3/typescript/site/CHANGELOG-v2.md?plain=1#L1
-
-
-brainstorming...
-
-https://dev.to/hammertoe/making-services-discoverable-with-erc-8004-trustless-agent-registration-with-filecoin-pin-1al3
-
-
-
-OKAY
-this is getting a little wild but I think what we need to do is modify this
-
-https://github.com/coinbase/x402/blob/main/typescript/packages/http/fetch/src/index.ts#L97
-
-when we createPaymentPayload we need to then ENCRYPT the result as well
+MIT 
