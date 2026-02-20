@@ -20,13 +20,13 @@ Start the facilitator first. This will run on localhost:30333
 
 `npm run facilitator`
 
-## start the server
+## Start the server
 
 Start the resource server once the faciltiator is running. This will run on localhost:4021
 
 `npm run server`
 
-## run the node client example
+## Run the node client example
 
 First install tsx with `npm install -D tsx`. Then run the example with `npm run client:node`.
 
@@ -40,7 +40,7 @@ For data **sellers**:
 
 ## Architecture
 
-It uses [fangorn](https://github.com/fangorn-network/fangorn) 
+It uses [fangorn](https://github.com/fangorn-network/fangorn) for encryption and datasource registration/management. See the fangorn readme to learn how to register datasources and upload data that can be sold via x402f.
 
 ## License 
 
