@@ -30,7 +30,7 @@ const config = process.env.CHAIN! === FangornConfig.ArbitrumSepolia.chainName ?
 const port = getEnv("SERVER_PORT");
 const jwt = getEnv("PINATA_JWT");
 const gateway = getEnv("PINATA_GATEWAY");
-
+const usdcContractAddress = getEnv("USDC_CONTRACT_ADDR");
 const account = privateKeyToAccount(getEnv("EVM_PRIVATE_KEY") as `0x${string}`);
 
 const agentCard =   {                                                                        
@@ -124,7 +124,7 @@ app.use(
 
               return {
                 amount,
-                asset: config.usdcContractAddress,
+                asset: usdcContractAddress,
                 extra: {
                   name: usdcDomainName,
                   version: "2",

@@ -34,8 +34,8 @@ async function nodeExample() {
 
     // 0x147c24c5Ea2f1EE1ac42AD16820De23bBba45Ef6
     const owner = "0x147c24c5Ea2f1EE1ac42AD16820De23bBba45Ef6" as Address; 
-    const datasourceName = "demo";
-    const tag = "helloFangorn.txt";
+    const datasourceName = "220";
+    const tag = "test.txt";
 
     const result = await middleware.fetchResource({
         owner,
