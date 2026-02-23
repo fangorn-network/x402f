@@ -1,12 +1,17 @@
 {
   "name": "x402f",
-  "version": "1.0.0",
-  "description": "First setup environment variables by running `cp .env.local .env` and filling in the details.",
+  "version": "0.0.1",
+  "description": "x402 + Fangorn",
   "main": "lib/index.js",
   "type": "module",
   "files": [
-    "lib/"
+    "lib/",
+    "package.json"
   ],
+  "module": "./lib/index.js",
+  "exports": {
+    ".": "./lib/index.js"
+  },
   "compilerOptions": {
     "target": "ESNext",
     "module": "NodeNext",

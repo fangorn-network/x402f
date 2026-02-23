@@ -32,10 +32,9 @@ async function nodeExample() {
         pinataGateway
     );
 
-    // 0x147c24c5Ea2f1EE1ac42AD16820De23bBba45Ef6
     const owner = "0x147c24c5Ea2f1EE1ac42AD16820De23bBba45Ef6" as Address; 
-    const datasourceName = "220";
-    const tag = "test.txt";
+    const datasourceName = "demo";
+    const tag = "helloFangorn.txt";
 
     const result = await middleware.fetchResource({
         owner,
@@ -46,7 +45,6 @@ async function nodeExample() {
 
     if (result.success) {
         console.log("Decrypted result:", atob(result.dataString));
-        console.log("Already paid?", result.alreadyPaid);
         process.exit(0)
     } else {
         console.error("Failed:", result.error);

@@ -1,4 +1,5 @@
 import express from "express";
+import cors from 'cors';
 import { paymentMiddleware } from "@x402/express";
 import { x402ResourceServer, HTTPFacilitatorClient } from "@x402/core/server";
 import type { HTTPRequestContext } from "@x402/core/server";
@@ -7,17 +8,37 @@ import { createLitClient } from "@lit-protocol/lit-client";
 import { privateKeyToAccount } from "viem/accounts";
 import { Fangorn, LitEncryptionService, PinataStorage } from "fangorn-sdk";
 import { nagaDev } from "@lit-protocol/networks";
-import { FangornEvmScheme } from "./FangornEvmScheme";
-import { getEnv } from "..";
+import { FangornEvmScheme } from "./FangornEvmScheme.js";
+import { getEnv } from "../index.js";
 import { PinataSDK } from "pinata";
-import { FangornConfig } from "fangorn-sdk/lib/config";
-import { computeTagCommitment } from "fangorn-sdk/lib/utils";
+import { FangornConfig } from "fangorn-sdk/lib/config.js";
+import { computeTagCommitment } from "fangorn-sdk/lib/utils/index.js";
 
 const app = express();
+
+// // for browser support
+// app.use((req, res, next) => {
+//   res.setHeader('Access-Control-Allow-Origin', 'http://localhost:5173');
+//   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+//   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Payment');
+//   res.setHeader('Access-Control-Expose-Headers', 'Payment, X-Payment-Response');
+//   if (req.method === 'OPTIONS') {
+//     res.sendStatus(204);
+//     return;
+//   }
+//   next();
+// });
+
+// Note: must register this BEFORE express
+app.use(cors({
+  origin: 'http://localhost:5173',
+  exposedHeaders: ['payment-required', 'payment-response']
+}));
+
 app.use(express.json());
 
 // setup
-// TOOO: read from env vars
+// TOOO: read port from env vars
 const facilitatorClient = new HTTPFacilitatorClient({
   url: "http://localhost:30333"
 });
@@ -33,42 +54,42 @@ const gateway = getEnv("PINATA_GATEWAY");
 const usdcContractAddress = getEnv("USDC_CONTRACT_ADDR");
 const account = privateKeyToAccount(getEnv("EVM_PRIVATE_KEY") as `0x${string}`);
 
-const agentCard =   {                                                                        
-    "capabilities": {                                                      
-      "streaming": false,                                                  
-      "pushNotifications": false,                                          
-      "stateTransitionHistory": false                                      
-    },                                                                     
-    "defaultInputModes": [                                                 
-      "text/plain",                                                        
-      "application/json"                                                   
-    ],                                                                     
-    "defaultOutputModes": [                                                
-      "text/plain",                                                        
-      "application/json"                                                   
-    ],                                                                     
-    "skills": [                                                            
-      {                                                                    
-        "id": "obtain-test-text-data",                                     
-        "name": "Obtain test text data",                                   
-        "description": "This advertises that this agent serves test text data via a resource server",                                             
-        "tags": [                                                          
-          "test",                                                          
-          "text",                                                          
-          "x402f",                                                         
-          "datasource"                                                     
-        ]                                                                  
-      }                                                                    
-    ],                                                                     
-    "name": "local-testfile-agent",                                        
-    "description": "This is the best datasource agent for receiving test text files",                                                             
-    "version": "0.0.1",                                                    
-    "url": "http://localhost:4021",                                        
-    "provider": {                                                          
-      "organization": "Fangorn",                                           
-      "url": "https://fangorn.network"                                     
-    }                                                                      
-  }           
+const agentCard = {
+  "capabilities": {
+    "streaming": false,
+    "pushNotifications": false,
+    "stateTransitionHistory": false
+  },
+  "defaultInputModes": [
+    "text/plain",
+    "application/json"
+  ],
+  "defaultOutputModes": [
+    "text/plain",
+    "application/json"
+  ],
+  "skills": [
+    {
+      "id": "obtain-test-text-data",
+      "name": "Obtain test text data",
+      "description": "This advertises that this agent serves test text data via a resource server",
+      "tags": [
+        "test",
+        "text",
+        "x402f",
+        "datasource"
+      ]
+    }
+  ],
+  "name": "local-testfile-agent",
+  "description": "This is the best datasource agent for receiving test text files",
+  "version": "0.0.1",
+  "url": "http://localhost:4021",
+  "provider": {
+    "organization": "Fangorn",
+    "url": "https://fangorn.network"
+  }
+}
 
 const delegatorWalletClient = createWalletClient({
   account,
@@ -157,10 +178,10 @@ app.post("/resource", async (req, res) => {
   }
 });
 
-app.get("/.well-known/agent-card.json", async (req, res)=> {
+app.get("/.well-known/agent-card.json", async (req, res) => {
   res.status(200).json(agentCard);
 
-}) 
+})
 
 app.listen(port, () => {
   function printStartupHeader(port = "3000") {

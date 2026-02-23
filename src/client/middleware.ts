@@ -1,12 +1,12 @@
 import { x402Client, x402HTTPClient } from "@x402/core/client";
-import { encodeAbiParameters, keccak256, parseAbiParameters, type Address, type Hex, type WalletClient } from "viem";
+import { createPublicClient, encodeAbiParameters, http, keccak256, parseAbiParameters, type Address, type Hex, type WalletClient } from "viem";
 import { createLitClient, type LitClient } from "@lit-protocol/lit-client";
 import { nagaDev } from "@lit-protocol/networks";
-import { registerExactEvmScheme } from "@x402/evm/exact/client";
-import { Fangorn, LitEncryptionService, PinataStorage } from "fangorn-sdk";
+import { ExactEvmScheme, registerExactEvmScheme } from "@x402/evm/exact/client";
+import { AppConfig, Fangorn, FangornConfig, LitEncryptionService, PinataStorage } from "fangorn-sdk";
 import { PinataSDK } from "pinata";
-import { AppConfig } from "fangorn-sdk/lib/config";
-import { wrapFetchWithPayment } from "@x402/fetch";
+import { wrapFetchWithPaymentFromConfig } from "@x402/fetch";
+import { ClientEvmSigner } from "@x402/evm";
 
 /**
  * x402's expected signer interface (not exported from package)
@@ -24,23 +24,25 @@ interface X402EvmSigner {
 /**
  * Wraps a viem WalletClient to satisfy x402's signer interface
  */
-function createSignerFromWallet(walletClient: WalletClient): X402EvmSigner {
+function createSignerFromWallet(walletClient: WalletClient, config: AppConfig): ClientEvmSigner {
     const account = walletClient.account;
-    if (!account) {
-        throw new Error("WalletClient must have an account attached");
-    }
+    if (!account) throw new Error("WalletClient must have an account attached");
+
+    const publicClient = createPublicClient({
+        chain: walletClient.chain,
+        transport: http(config.rpcUrl),
+    });
 
     return {
         address: account.address,
-        signTypedData: async (message) => {
-            return walletClient.signTypedData({
-                account,
-                domain: message.domain as any,
-                types: message.types as any,
-                primaryType: message.primaryType,
-                message: message.message,
-            });
-        },
+        signTypedData: async (message) => walletClient.signTypedData({
+            account: walletClient.account!.type === 'local' ? account : account.address,
+            domain: message.domain as any,
+            types: message.types as any,
+            primaryType: message.primaryType,
+            message: message.message,
+        }),
+        readContract: (params) => publicClient.readContract(params as any),
     };
 }
 
@@ -75,8 +77,6 @@ export class FangornX402Middleware {
     private httpClient!: x402HTTPClient;
     private fetchWithPayment!: typeof fetch;
     private walletClient: WalletClient;
-    // private litClient!: LitClient;
-    // private storage: PinataStorage;
 
     private config: AppConfig;
 
@@ -90,47 +90,23 @@ export class FangornX402Middleware {
         this.config = config;
     }
 
-    async init(
-        config: AppConfig,
-        domain: string,
-        pinataJwt: string,
-        pinataGateway: string,
-    ): Promise<this> {
+    async init(config: AppConfig, domain: string, pinataJwt: string, pinataGateway: string): Promise<this> {
         if (this.initialized) return this;
 
-        // Initialize Lit client
-        // this.litClient = await createLitClient({
-        //     network: nagaDev,
-        // });
-
         const litClient = await createLitClient({ network: nagaDev });
-        const encryptionService = new LitEncryptionService(litClient, {
-          chainName: config.chainName,
-        });
+        const encryptionService = new LitEncryptionService(litClient, { chainName: config.chainName });
 
-        // storage via Pinata
-        const pinata = new PinataSDK({
-            pinataJwt: pinataJwt,
-            pinataGateway: pinataGateway,
-        });
+        const pinata = new PinataSDK({ pinataJwt, pinataGateway });
         const storageAdapter = new PinataStorage(pinata);
 
-        // Initialize Fangorn
-        this.fangorn = await Fangorn.init(
-            this.walletClient,
-            storageAdapter,
-            encryptionService,
-            domain,
-            config,
-        );
+        this.fangorn = await Fangorn.init(this.walletClient, storageAdapter, encryptionService, domain, config);
 
-        // Initialize x402 client with signer adapter
-        this.x402Client = new x402Client();
-        registerExactEvmScheme(this.x402Client, {
-            signer: createSignerFromWallet(this.walletClient)
+        this.fetchWithPayment = wrapFetchWithPaymentFromConfig(globalThis.fetch.bind(globalThis), {
+            schemes: [{
+                network: `eip155:${config.caip2}`,
+                client: new ExactEvmScheme(createSignerFromWallet(this.walletClient, config)),
+            }],
         });
-        this.httpClient = new x402HTTPClient(this.x402Client);
-        this.fetchWithPayment = wrapFetchWithPayment(fetch, this.x402Client);
 
         this.initialized = true;
         return this;
@@ -159,13 +135,13 @@ export class FangornX402Middleware {
         try {
             const response = await this.fetchWithPayment(`${baseUrl}${endpoint}`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json", "Accept": "application/json" },
                 body: JSON.stringify({ owner, name: datasourceName, tag }),
             });
 
             const data = await response.json();
             // Check if already paid
-            const alreadyPaid = data.details?.includes("Already paid") ?? false;
+            const alreadyPaid = (data as any).details?.includes("Already paid") ?? false;
             // Handle 402 Payment Required
             if (response.status === 402 && !alreadyPaid) {
                 return {
@@ -177,25 +153,19 @@ export class FangornX402Middleware {
 
             // Process successful response
             if (response.ok || alreadyPaid) {
-
-                let paymentResponse: unknown;
-
-                if (!alreadyPaid) {
-                    paymentResponse = this.httpClient.getPaymentSettleResponse(
-                        (name: string) => response.headers.get(name)
-                    );
-                }
-
+                console.log(JSON.stringify(response))
                 // Decrypt the file
-                const decryptedData = await this.fangorn.decryptFile(owner, datasourceName, tag);
+                const decryptedData = await this.fangorn.decryptFile(
+                    owner, 
+                    datasourceName, 
+                    tag,
+                );
                 const dataString = new TextDecoder().decode(decryptedData);
 
                 return {
                     success: true,
                     data: decryptedData,
                     dataString,
-                    alreadyPaid,
-                    paymentResponse,
                 };
             }
 
