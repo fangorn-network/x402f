@@ -5,7 +5,7 @@ import { x402ResourceServer, HTTPFacilitatorClient } from "@x402/core/server";
 import type { HTTPRequestContext } from "@x402/core/server";
 import { createWalletClient, Hex, http, parseUnits } from "viem";
 import { createLitClient } from "@lit-protocol/lit-client";
-import { privateKeyToAccount } from "viem/accounts";
+import { Address, privateKeyToAccount } from "viem/accounts";
 import { Fangorn, LitEncryptionService, PinataStorage } from "fangorn-sdk";
 import { nagaDev } from "@lit-protocol/networks";
 import { FangornEvmScheme } from "./FangornEvmScheme.js";
@@ -15,19 +15,6 @@ import { FangornConfig } from "fangorn-sdk/lib/config.js";
 import { computeTagCommitment } from "fangorn-sdk/lib/utils/index.js";
 
 const app = express();
-
-// // for browser support
-// app.use((req, res, next) => {
-//   res.setHeader('Access-Control-Allow-Origin', 'http://localhost:5173');
-//   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-//   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Payment');
-//   res.setHeader('Access-Control-Expose-Headers', 'Payment, X-Payment-Response');
-//   if (req.method === 'OPTIONS') {
-//     res.sendStatus(204);
-//     return;
-//   }
-//   next();
-// });
 
 // Note: must register this BEFORE express
 app.use(cors({
@@ -100,10 +87,7 @@ const delegatorWalletClient = createWalletClient({
 const server = new x402ResourceServer(facilitatorClient);
 server.register("eip155:*", new FangornEvmScheme());
 
-const litClient = await createLitClient({ network: nagaDev });
-const encryptionService = new LitEncryptionService(litClient, {
-  chainName: config.chainName,
-});
+const encryptionService = await LitEncryptionService.init(config.chainName);
 
 const domain = "localhost:3000";
 
@@ -123,10 +107,15 @@ const fangorn = await Fangorn.init(
   config,
 );
 
+const resolveParam = (val: string | string[] | undefined): string => {
+  const raw = Array.isArray(val) ? val[0] : val ?? "";
+  return raw.trim();
+};
+
 app.use(
   paymentMiddleware(
     {
-      "POST /resource": {
+      "GET /resource": {
         description: "Read fangorn data",
         mimeType: "application/json",
         accepts: [
@@ -134,28 +123,23 @@ app.use(
             scheme: "exact",
             network: `eip155:${config.caip2}`,
             price: async (context: HTTPRequestContext) => {
-              const body = context.adapter.getBody?.() as any;
-              const entry = await fangorn.getDataSourceData(body.owner, body.name, body.tag);
-              // extract the price from the predicate descriptor
-              const price = entry.gadgetDescriptor.params!.price as string;
-              const commitment = await computeTagCommitment(body.owner, body.name, body.tag, price);
-              // convert decimal price to atomic units (USDC has 6 decimals)
-              const decimalPrice = parseFloat(price);
-              const amount = Math.round(decimalPrice * 1_000_000).toString();
+              const owner = resolveParam(context.adapter.getQueryParam?.("owner")) as Address;
+              const name = resolveParam(context.adapter.getQueryParam?.("name")).trim();
+              const tag = resolveParam(context.adapter.getQueryParam?.("tag")).trim();
 
+              const entry = await fangorn.getDataSourceData(owner, name, tag);
+              const price = entry.gadgetDescriptor.params!.price as string;
+              const commitment = await computeTagCommitment(owner, name, tag, price);
+              const amount = Math.round(parseFloat(price) * 1_000_000).toString();
               return {
                 amount,
                 asset: usdcContractAddress,
-                extra: {
-                  name: usdcDomainName,
-                  version: "2",
-                  commitment: commitment.toString(),
-                }
+                extra: { name: usdcDomainName, version: "2", commitment: commitment.toString() }
               };
             },
             payTo: async (context: HTTPRequestContext) => {
-              const body = context.adapter.getBody?.() as any;
-              const vault = await fangorn.getDataSource(body.owner, body.name);
+              const { owner, name } = context.adapter.getQueryParams?.() as any;
+              const vault = await fangorn.getDataSource(owner, name);
               return vault.owner;
             },
             maxTimeoutSeconds: 300,
@@ -167,7 +151,7 @@ app.use(
   ),
 );
 
-app.post("/resource", async (req, res) => {
+app.get("/resource", async (req, res) => {
   try {
     res.send({
       success: true,

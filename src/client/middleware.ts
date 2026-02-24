@@ -93,8 +93,7 @@ export class FangornX402Middleware {
     async init(config: AppConfig, domain: string, pinataJwt: string, pinataGateway: string): Promise<this> {
         if (this.initialized) return this;
 
-        const litClient = await createLitClient({ network: nagaDev });
-        const encryptionService = new LitEncryptionService(litClient, { chainName: config.chainName });
+        const encryptionService = await LitEncryptionService.init(config.chainName);
 
         const pinata = new PinataSDK({ pinataJwt, pinataGateway });
         const storageAdapter = new PinataStorage(pinata);
@@ -133,17 +132,17 @@ export class FangornX402Middleware {
         } = options;
 
         try {
-            const response = await this.fetchWithPayment(`${baseUrl}${endpoint}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "Accept": "application/json" },
-                body: JSON.stringify({ owner, name: datasourceName, tag }),
-            });
+            const params = new URLSearchParams({ owner, name: datasourceName, tag });
+            console.log(`${baseUrl}${endpoint}?${params.toString()}`,);
+            const response = await this.fetchWithPayment(
+                `${baseUrl}${endpoint}?${params.toString()}`,
+                {
+                    method: "GET",
+                    headers: { "Accept": "application/json" },
+                }
+            );
 
-            const data = await response.json();
-            // Check if already paid
-            const alreadyPaid = (data as any).details?.includes("Already paid") ?? false;
-            // Handle 402 Payment Required
-            if (response.status === 402 && !alreadyPaid) {
+            if (response.status === 402) {
                 return {
                     success: false,
                     error: "Payment required but not processed",
@@ -151,17 +150,9 @@ export class FangornX402Middleware {
                 };
             }
 
-            // Process successful response
-            if (response.ok || alreadyPaid) {
-                console.log(JSON.stringify(response))
-                // Decrypt the file
-                const decryptedData = await this.fangorn.decryptFile(
-                    owner, 
-                    datasourceName, 
-                    tag,
-                );
+            if (response.ok) {
+                const decryptedData = await this.fangorn.decryptFile(owner, datasourceName, tag);
                 const dataString = new TextDecoder().decode(decryptedData);
-
                 return {
                     success: true,
                     data: decryptedData,

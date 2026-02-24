@@ -44,7 +44,7 @@ async function nodeExample() {
     });
 
     if (result.success) {
-        console.log("Decrypted result:", atob(result.dataString));
+        console.log("Decrypted result:", atob((result as any).dataString));
         process.exit(0)
     } else {
         console.error("Failed:", result.error);
