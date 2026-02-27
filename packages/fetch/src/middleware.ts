@@ -1,25 +1,9 @@
 import { x402Client, x402HTTPClient } from "@x402/core/client";
-import { createPublicClient, encodeAbiParameters, http, keccak256, parseAbiParameters, type Address, type Hex, type WalletClient } from "viem";
-import { createLitClient, type LitClient } from "@lit-protocol/lit-client";
-import { nagaDev } from "@lit-protocol/networks";
-import { ExactEvmScheme, registerExactEvmScheme } from "@x402/evm/exact/client";
-import { AppConfig, Fangorn, FangornConfig, LitEncryptionService, PinataStorage } from "fangorn-sdk";
-import { PinataSDK } from "pinata";
+import { createPublicClient, http, type Address, type Hex, type WalletClient } from "viem";
+import { ExactEvmScheme } from "@x402/evm/exact/client";
+import { AppConfig, Fangorn, LitEncryptionService, PinataStorage } from "fangorn-sdk";
 import { wrapFetchWithPaymentFromConfig } from "@x402/fetch";
 import { ClientEvmSigner } from "@x402/evm";
-
-/**
- * x402's expected signer interface (not exported from package)
- */
-interface X402EvmSigner {
-    address: Hex;
-    signTypedData: (message: {
-        domain: Record<string, unknown>;
-        types: Record<string, unknown>;
-        primaryType: string;
-        message: Record<string, unknown>;
-    }) => Promise<Hex>;
-}
 
 /**
  * Wraps a viem WalletClient to satisfy x402's signer interface
@@ -56,7 +40,6 @@ export interface FangornMiddlewareConfig {
 export interface FetchResourceOptions {
     owner: Address,
     datasourceName: string;
-    // id: Hex;
     tag: string;
     baseUrl?: string;
     endpoint?: string;
@@ -74,20 +57,15 @@ export interface FetchResourceResult {
 export class FangornX402Middleware {
     private fangorn!: Fangorn;
     private x402Client!: x402Client;
-    private httpClient!: x402HTTPClient;
     private fetchWithPayment!: typeof fetch;
     private walletClient: WalletClient;
-
-    private config: AppConfig;
-
     private initialized = false;
 
-    constructor(walletClient: WalletClient, config: AppConfig) {
+    constructor(walletClient: WalletClient) {
         if (!walletClient.account) {
             throw new Error("WalletClient must have an account attached");
         }
         this.walletClient = walletClient;
-        this.config = config;
     }
 
     async init(config: AppConfig, domain: string, pinataJwt: string, pinataGateway: string): Promise<this> {
@@ -95,8 +73,7 @@ export class FangornX402Middleware {
 
         const encryptionService = await LitEncryptionService.init(config.chainName);
 
-        const pinata = new PinataSDK({ pinataJwt, pinataGateway });
-        const storageAdapter = new PinataStorage(pinata);
+        const storageAdapter = new PinataStorage(pinataJwt, pinataGateway);
 
         this.fangorn = await Fangorn.init(this.walletClient, storageAdapter, encryptionService, domain, config);
 
@@ -127,8 +104,8 @@ export class FangornX402Middleware {
             owner,
             datasourceName,
             tag,
-            baseUrl = "http://127.0.0.1:4021",
-            endpoint = "/resource",
+            baseUrl = "http://localhost  :4021",
+            endpoint = "/",
         } = options;
 
         try {
@@ -142,11 +119,13 @@ export class FangornX402Middleware {
                 }
             );
 
+            console.log('adkjfhahjkfads')
+
             if (response.status === 402) {
                 return {
                     success: false,
                     error: "Payment required but not processed",
-                    alreadyPaid: false,
+                    alreadyPaid: false,mi
                 };
             }
 
@@ -203,7 +182,7 @@ export async function createFangornMiddleware(
     jwt: string,
     gateway: string,
 ): Promise<FangornX402Middleware> {
-    const middleware = new FangornX402Middleware(walletClient, config);
+    const middleware = new FangornX402Middleware(walletClient);
     await middleware.init(config, domain, jwt, gateway);
     return middleware;
 }

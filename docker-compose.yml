@@ -1,0 +1,35 @@
+services:
+  facilitator:
+    build:
+      context: .
+      dockerfile: packages/facilitator/Dockerfile
+    env_file:
+      - ./packages/facilitator/.env
+    ports:
+      - "30333:30333"
+    networks:
+      - x402f
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:30333/supported').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+      
+  server:
+    build:
+      context: .
+      dockerfile: packages/server/Dockerfile
+    env_file:
+      - ./packages/server/.env
+    ports:
+      - "4021:4021"
+    networks:
+      - x402f
+    depends_on:
+      facilitator:
+        condition: service_healthy
+
+networks:
+  x402f:
+    driver: bridge

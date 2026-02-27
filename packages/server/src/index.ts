@@ -1,25 +1,45 @@
-import express from "express";
+import express from 'express';
 import cors from 'cors';
 import { paymentMiddleware } from "@x402/express";
 import { x402ResourceServer, HTTPFacilitatorClient } from "@x402/core/server";
 import type { HTTPRequestContext } from "@x402/core/server";
-import { createWalletClient, Hex, http, parseUnits } from "viem";
-import { createLitClient } from "@lit-protocol/lit-client";
+import { createWalletClient, http } from "viem";
 import { Address, privateKeyToAccount } from "viem/accounts";
-import { Fangorn, LitEncryptionService, PinataStorage } from "fangorn-sdk";
-import { nagaDev } from "@lit-protocol/networks";
+import { computeTagCommitment, Fangorn, FangornConfig, LitEncryptionService, PinataStorage } from "fangorn-sdk";
 import { FangornEvmScheme } from "./FangornEvmScheme.js";
-import { getEnv } from "../index.js";
-import { PinataSDK } from "pinata";
-import { FangornConfig } from "fangorn-sdk/lib/config.js";
-import { computeTagCommitment } from "fangorn-sdk/lib/utils/index.js";
+
+
+const getEnv = (key: string): string => {
+  const value = process.env[key];
+  if (!value) {
+    throw new Error(`Environment variable ${key} is not set`);
+  }
+  return value;
+};
+
+const facilitatorHost = process.env.FACILITATOR_DOMAIN || '';
+const facilitatorPort = process.env.FACILITATOR_PORT || 0;
+
+console.log('using facilitator host:port ' + facilitatorHost + ':' + facilitatorPort)
+
+const usdcDomainName = process.env.USDC_DOMAIN_NAME!;
+const port = getEnv("SERVER_PORT");
+const jwt = getEnv("PINATA_JWT");
+const gateway = getEnv("PINATA_GATEWAY");
+const usdcContractAddress = getEnv("USDC_CONTRACT_ADDR");
+const account = privateKeyToAccount(getEnv("EVM_PRIVATE_KEY") as `0x${string}`);
+
+// the fangorn config derived from chain
+const config = process.env.CHAIN! === FangornConfig.ArbitrumSepolia.chainName ?
+  FangornConfig.ArbitrumSepolia : FangornConfig.BaseSepolia;
 
 const app = express();
 
 // Note: must register this BEFORE express
 app.use(cors({
   origin: 'http://localhost:5173',
-  exposedHeaders: ['payment-required', 'payment-response']
+  exposedHeaders: ['payment-required', 'payment-response'],
+  methods: ['GET'], 
 }));
 
 app.use(express.json());
@@ -27,19 +47,9 @@ app.use(express.json());
 // setup
 // TOOO: read port from env vars
 const facilitatorClient = new HTTPFacilitatorClient({
-  url: "http://localhost:30333"
+  url: `${facilitatorHost}:${facilitatorPort}`
 });
 
-const usdcDomainName = process.env.USDC_DOMAIN_NAME!;
-
-const config = process.env.CHAIN! === FangornConfig.ArbitrumSepolia.chainName ?
-  FangornConfig.ArbitrumSepolia : FangornConfig.BaseSepolia;
-
-const port = getEnv("SERVER_PORT");
-const jwt = getEnv("PINATA_JWT");
-const gateway = getEnv("PINATA_GATEWAY");
-const usdcContractAddress = getEnv("USDC_CONTRACT_ADDR");
-const account = privateKeyToAccount(getEnv("EVM_PRIVATE_KEY") as `0x${string}`);
 
 const agentCard = {
   "capabilities": {
@@ -89,15 +99,11 @@ server.register("eip155:*", new FangornEvmScheme());
 
 const encryptionService = await LitEncryptionService.init(config.chainName);
 
-const domain = "localhost:3000";
+// TODO: is this right?
+const domain = `0.0.0.0:${port}`;
 
 // storage via Pinata
-const pinata = new PinataSDK({
-  pinataJwt: jwt,
-  pinataGateway: gateway,
-});
-
-const storage = new PinataStorage(pinata);
+const storage = new PinataStorage(jwt, gateway);
 
 const fangorn = await Fangorn.init(
   delegatorWalletClient,
@@ -115,7 +121,7 @@ const resolveParam = (val: string | string[] | undefined): string => {
 app.use(
   paymentMiddleware(
     {
-      "GET /resource": {
+      "GET /": {
         description: "Read fangorn data",
         mimeType: "application/json",
         accepts: [
@@ -151,7 +157,7 @@ app.use(
   ),
 );
 
-app.get("/resource", async (req, res) => {
+app.get("/", async (req, res: any) => {
   try {
     res.send({
       success: true,

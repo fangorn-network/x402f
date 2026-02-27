@@ -6,9 +6,6 @@
     "lib": ["ESNext"],
     "skipLibCheck": true,
     "esModuleInterop": true,
-    "strict": false,
-    "outDir": "./lib",
-    "rootDir": "./src"
-  },
-  "include": ["src/**/*"]
+    "strict": false
+  }
 }

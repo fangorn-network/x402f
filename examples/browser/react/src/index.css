@@ -1,13 +1,344 @@
-body {
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  padding: 0;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+:root {
+  --black: #0a0a0a;
+  --white: #f5f5f0;
+  --mid: #888;
+  --border: #222;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  background: var(--black);
+  color: var(--white);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  cursor: crosshair;
+}
+
+/* animated grid background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(245,245,240,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(245,245,240,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.App {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── HEADER ── */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 32px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--black);
+  z-index: 10;
+}
+
+header h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.4rem;
+  letter-spacing: 0.12em;
+  color: var(--white);
+  position: relative;
+}
+
+header h1::after {
+  content: '//';
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.9rem;
+  color: var(--mid);
+  margin-left: 10px;
+  vertical-align: middle;
+}
+
+/* ── WALLET ── */
+.wallet-connected {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.wallet-address {
+  font-size: 11px;
+  color: var(--mid);
+  letter-spacing: 0.08em;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+}
+
+/* ── BUTTONS ── */
+button {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: crosshair;
+  border: 1px solid var(--white);
+  background: transparent;
+  color: var(--white);
+  padding: 8px 18px;
+  transition: background 0.15s, color 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+
+button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--white);
+  transform: translateX(-101%);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 0;
+}
+
+button:hover::before {
+  transform: translateX(0);
+}
+
+button:hover {
+  color: var(--black);
+}
+
+button span, button:not(:has(span)) {
+  position: relative;
+  z-index: 1;
+}
+
+button:disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+button.reset {
+  font-size: 10px;
+  border-color: var(--border);
+  color: var(--mid);
+  padding: 5px 10px;
+}
+
+button.reset:hover {
+  color: var(--black);
+}
+
+/* ── MAIN ── */
+main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 32px;
+}
+
+/* ── FORM ── */
+.resource-form {
+  width: 100%;
+  max-width: 560px;
+  animation: fadeUp 0.4s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--mid);
+  margin-bottom: 6px;
+}
+
+.hint {
+  font-size: 9px;
+  color: #555;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.form-group input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--white);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  padding: 8px 0;
+  outline: none;
+  transition: border-color 0.2s;
+  cursor: crosshair;
+}
+
+.form-group input:focus {
+  border-bottom-color: var(--white);
+}
+
+.form-group input::placeholder {
+  color: #333;
+}
+
+.form-divider {
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #333;
+  text-align: center;
+  margin: 28px 0;
+  position: relative;
+}
+
+.form-divider::before,
+.form-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 38%;
+  height: 1px;
+  background: var(--border);
+}
+
+.form-divider::before { left: 0; }
+.form-divider::after  { right: 0; }
+
+.resource-form > button[type="submit"] {
+  margin-top: 12px;
+  width: 100%;
+  padding: 12px;
+  font-size: 12px;
+}
+
+/* ── PAYWALL ── */
+.paywall {
+  width: 100%;
+  max-width: 560px;
+  animation: fadeUp 0.4s ease both;
+}
+
+.resource-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 32px;
+  font-size: 11px;
+  color: var(--mid);
+}
+
+.resource-meta strong {
+  color: var(--white);
+  font-weight: 500;
+}
+
+.resource-meta .reset {
+  margin-left: auto;
+}
+
+.paywall > button {
+  width: 100%;
+  padding: 14px;
+  font-size: 12px;
+}
+
+/* unlock button pulse when idle */
+.paywall > button:not(:disabled) {
+  animation: pulse 3s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245,245,240,0); }
+  50%       { box-shadow: 0 0 0 4px rgba(245,245,240,0.08); }
+}
+
+/* ── CONTENT ── */
+.content {
+  border: 1px solid var(--border);
+  padding: 24px;
+  font-size: 12px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  word-break: break-word;
+  position: relative;
+  animation: reveal 0.5s ease both;
+}
+
+.content::before {
+  content: 'DECRYPTED';
+  position: absolute;
+  top: -9px;
+  left: 16px;
+  background: var(--black);
+  padding: 0 8px;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: var(--mid);
+}
+
+@keyframes reveal {
+  from { opacity: 0; clip-path: inset(0 100% 0 0); }
+  to   { opacity: 1; clip-path: inset(0 0% 0 0); }
+}
+
+/* ── STATUS / ERROR ── */
+.status {
+  font-size: 11px;
+  color: var(--mid);
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+.error {
+  font-size: 11px;
+  color: #ff4444;
+  border: 1px solid #330000;
+  padding: 10px 14px;
+  margin-bottom: 20px;
+  letter-spacing: 0.04em;
+}
+
+/* ── LOADING SPINNER (text-based) ── */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+.status:has-text("Initializing")::after,
+div:contains("Unlocking")::after {
+  content: '_';
+  animation: blink 1s step-end infinite;
 }

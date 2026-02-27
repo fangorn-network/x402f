@@ -1,14 +1,11 @@
 import { SettleResponse, VerifyResponse } from "@x402/core/types";
 import { PaymentPayload, PaymentRequirements } from "@x402/fetch";
 import express from "express";
-import { getFacilitator } from "./facilitator";
-import { getEnv } from "..";
+import { getFacilitator } from "./facilitator.js";
 
 // Initialize Express app
 const app = express();
 app.use(express.json());
-
-const port = getEnv("FACILITATOR_PORT");
 
 /**
  * POST /verify
@@ -114,9 +111,11 @@ app.get("/supported", async (req, res) => {
   }
 });
 
+const port = parseInt(process.env.FACILITATOR_PORT!) || 0;
+
 // Start the server
-app.listen(port, () => {
-  function printStartupHeader(port = "3000") {
+app.listen(port, '0.0.0.0', () => {
+  function printStartupHeader(port = 30333) {
     const header = `
   ╔═══════════════════════════════════════════════╗
   ║                                               ║

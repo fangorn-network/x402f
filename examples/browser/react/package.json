@@ -12,8 +12,8 @@
     "react-dom": "^19.2.4",
     "wagmi": "^3.4.2",
     "web-vitals": "^2.1.4",
-    "x402f": "../../../",
-    "fangorn-sdk": "../../../../fangorn"
+    "@x402f/fetch": "../../../packages/fetch/src/index.js",
+    "fangorn-sdk": "2026.2.2-7.0"
   },
   "scripts": {
     "start": "vite",

@@ -1,9 +1,17 @@
 import { createWalletClient, http, type Hex } from "viem";
 import { Address, privateKeyToAccount } from "viem/accounts";
-import { getEnv } from "../../src";
-import { createFangornMiddleware } from "../../src/client/middleware";
 import { atob } from "node:buffer";
-import { FangornConfig } from "fangorn-sdk/lib/config";
+import { createFangornMiddleware } from "../../packages/fetch/src/middleware.js";
+import { FangornConfig } from "fangorn-sdk";
+
+
+const getEnv = (key: string): string => {
+  const value = process.env[key];
+  if (!value) {
+    throw new Error(`Environment variable ${key} is not set`);
+  }
+  return value;
+};
 
 const envChain = process.env.CHAIN!;
 const config = envChain == "arbitrumSepolia" ? FangornConfig.ArbitrumSepolia : FangornConfig.BaseSepolia;
