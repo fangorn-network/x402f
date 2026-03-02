@@ -36,11 +36,12 @@ const config = process.env.CHAIN! === FangornConfig.ArbitrumSepolia.chainName ?
 const app = express();
 
 // Note: must register this BEFORE express
-app.use(cors({
-  origin: 'http://localhost:5173',
-  exposedHeaders: ['payment-required', 'payment-response'],
-  methods: ['GET'], 
-}));
+// app.use(cors({
+//   origin: 'http://localhost:5173',
+//   exposedHeaders: ['payment-required', 'payment-response'],
+//   methods: ['GET'], 
+// }));
+app.use(cors());
 
 app.use(express.json());
 

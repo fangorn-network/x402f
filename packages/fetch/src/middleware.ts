@@ -1,4 +1,4 @@
-import { x402Client, x402HTTPClient } from "@x402/core/client";
+import { x402Client } from "@x402/core/client";
 import { createPublicClient, http, type Address, type Hex, type WalletClient } from "viem";
 import { ExactEvmScheme } from "@x402/evm/exact/client";
 import { AppConfig, Fangorn, LitEncryptionService, PinataStorage } from "fangorn-sdk";
@@ -30,6 +30,10 @@ function createSignerFromWallet(walletClient: WalletClient, config: AppConfig): 
     };
 }
 
+/**
+ * The configuration items for the x402f/fetch middleware
+ * 
+ */
 export interface FangornMiddlewareConfig {
     pinataJwt: string;
     pinataGateway: string;
@@ -104,7 +108,7 @@ export class FangornX402Middleware {
             owner,
             datasourceName,
             tag,
-            baseUrl = "http://localhost  :4021",
+            baseUrl = "http://0.0.0.0:4021",
             endpoint = "/",
         } = options;
 
@@ -119,13 +123,11 @@ export class FangornX402Middleware {
                 }
             );
 
-            console.log('adkjfhahjkfads')
-
             if (response.status === 402) {
                 return {
                     success: false,
                     error: "Payment required but not processed",
-                    alreadyPaid: false,mi
+                    alreadyPaid: false,
                 };
             }
 

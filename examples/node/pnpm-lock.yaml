@@ -8,11 +8,14 @@ importers:
 
   .:
     dependencies:
+      '@x402f/fetch':
+        specifier: ../../packages/fetch
+        version: link:../../packages/fetch
       fangorn-sdk:
         specifier: 2026.2.2-7.0
         version: 2026.2.2-7.0(@sinclair/typebox@0.34.48)(encoding@0.1.13)(graphql@16.13.0)(tslib@2.8.1)(typescript@5.8.3)(viem@2.46.3(typescript@5.8.3)(zod@3.24.3))(zod@3.24.3)
       viem:
-        specifier: ^2.45.0
+        specifier: 2.46.3
         version: 2.46.3(typescript@5.8.3)(zod@3.24.3)
 
 packages:
@@ -5465,11 +5468,11 @@ snapshots:
   ox@0.6.9(typescript@5.8.3)(zod@3.24.3):
     dependencies:
       '@adraffy/ens-normalize': 1.11.1
-      '@noble/curves': 1.8.2
-      '@noble/hashes': 1.7.2
-      '@scure/bip32': 1.6.2
-      '@scure/bip39': 1.5.4
-      abitype: 1.0.8(typescript@5.8.3)(zod@3.24.3)
+      '@noble/curves': 1.9.1
+      '@noble/hashes': 1.8.0
+      '@scure/bip32': 1.7.0
+      '@scure/bip39': 1.6.0
+      abitype: 1.2.3(typescript@5.8.3)(zod@3.24.3)
       eventemitter3: 5.0.1
     optionalDependencies:
       typescript: 5.8.3
@@ -5484,7 +5487,7 @@ snapshots:
       '@noble/hashes': 1.8.0
       '@scure/bip32': 1.7.0
       '@scure/bip39': 1.6.0
-      abitype: 1.1.0(typescript@5.8.3)(zod@3.24.3)
+      abitype: 1.2.3(typescript@5.8.3)(zod@3.24.3)
       eventemitter3: 5.0.1
     optionalDependencies:
       typescript: 5.8.3

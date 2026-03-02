@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: packages/facilitator/Dockerfile
+    volumes:
+      - /app/node_modules
     env_file:
       - ./packages/facilitator/.env
     ports:
@@ -20,6 +22,8 @@ services:
     build:
       context: .
       dockerfile: packages/server/Dockerfile
+    volumes:
+      - /app/node_modules
     env_file:
       - ./packages/server/.env
     ports:
@@ -33,3 +37,6 @@ services:
 networks:
   x402f:
     driver: bridge
+
+volumes:
+  node_modules:
