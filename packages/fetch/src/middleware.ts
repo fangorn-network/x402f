@@ -108,7 +108,7 @@ export class FangornX402Middleware {
             owner,
             datasourceName,
             tag,
-            baseUrl = "http://0.0.0.0:4021",
+            baseUrl = "http://1.2.3.4:4021",
             endpoint = "/",
         } = options;
 

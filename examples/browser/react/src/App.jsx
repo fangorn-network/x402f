@@ -2,9 +2,10 @@ import './App.css';
 import { useWalletClient, useConnect, useDisconnect, useAccount, useSwitchChain } from "wagmi";
 import { injected } from 'wagmi/connectors';
 import { useEffect, useState } from "react";
-import { createFangornMiddleware } from "x402f";
 import { arbitrumSepolia } from 'viem/chains';
 import { FangornConfig } from 'fangorn-sdk';
+import { createFangornMiddleware } from "../../../../packages/fetch/src/middleware.js";
+// import { createFangornMiddleware } from "@x402f/fetch";
 
 const FANGORN_CONFIG = {
     pinataJwt: import.meta.env.VITE_PINATA_JWT,

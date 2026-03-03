@@ -8,7 +8,6 @@ import { Address, privateKeyToAccount } from "viem/accounts";
 import { computeTagCommitment, Fangorn, FangornConfig, LitEncryptionService, PinataStorage } from "fangorn-sdk";
 import { FangornEvmScheme } from "./FangornEvmScheme.js";
 
-
 const getEnv = (key: string): string => {
   const value = process.env[key];
   if (!value) {
@@ -19,11 +18,8 @@ const getEnv = (key: string): string => {
 
 const facilitatorHost = process.env.FACILITATOR_DOMAIN || '';
 const facilitatorPort = process.env.FACILITATOR_PORT || 0;
-
-console.log('using facilitator host:port ' + facilitatorHost + ':' + facilitatorPort)
-
 const usdcDomainName = process.env.USDC_DOMAIN_NAME!;
-const port = getEnv("SERVER_PORT");
+const port = parseInt(process.env.SERVER_PORT!) || 0;
 const jwt = getEnv("PINATA_JWT");
 const gateway = getEnv("PINATA_GATEWAY");
 const usdcContractAddress = getEnv("USDC_CONTRACT_ADDR");
@@ -41,7 +37,12 @@ const app = express();
 //   exposedHeaders: ['payment-required', 'payment-response'],
 //   methods: ['GET'], 
 // }));
-app.use(cors());
+app.use(cors({
+  origin: '*', // For testing, allow all
+  exposedHeaders: ['payment-required', 'payment-response', 'x402-commitment'],
+  methods: ['GET', 'POST', 'OPTIONS'], 
+}));
+// app.use(cors());
 
 app.use(express.json());
 
@@ -101,7 +102,8 @@ server.register("eip155:*", new FangornEvmScheme());
 const encryptionService = await LitEncryptionService.init(config.chainName);
 
 // TODO: is this right?
-const domain = `0.0.0.0:${port}`;
+// const domain = `0.0.0.0:${port}`;
+const domain = process.env.RESOURCE_SERVER_DOMAIN || `localhost:${port}`;
 
 // storage via Pinata
 const storage = new PinataStorage(jwt, gateway);
@@ -113,6 +115,8 @@ const fangorn = await Fangorn.init(
   domain,
   config,
 );
+
+console.log('using usdc domain name ' + usdcDomainName);
 
 const resolveParam = (val: string | string[] | undefined): string => {
   const raw = Array.isArray(val) ? val[0] : val ?? "";
@@ -174,8 +178,8 @@ app.get("/.well-known/agent-card.json", async (req, res) => {
 
 })
 
-app.listen(port, () => {
-  function printStartupHeader(port = "3000") {
+app.listen(port, '0.0.0.0', () => {
+  function printStartupHeader(port = 4321) {
     const header = `
   ╔═══════════════════════════════════════════════╗
   ║                                               ║
