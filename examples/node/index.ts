@@ -48,7 +48,6 @@ async function nodeExample() {
         datasourceName,
         tag,
         baseUrl: resourceServerUrl,
-        authToken: process.env.AUTH_TOKEN!,
     });
 
     if (result.success) {

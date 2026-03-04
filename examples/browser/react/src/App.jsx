@@ -73,7 +73,7 @@ function ConnectWallet() {
 
 function ResourceForm({ onSubmit }) {
     const [url, setUrl] = useState('');
-    const [baseUrl, setBaseUrl] = useState('http://localhost:4021');
+    const [baseUrl, setBaseUrl] = useState('https://server-133282782456.us-central1.run.app');
     const [owner, setOwner] = useState('');
     const [datasourceName, setDatasourceName] = useState('');
     const [tag, setTag] = useState('');
@@ -143,6 +143,7 @@ function PaywallContent({ resource, onReset }) {
             tag: resource.tag,
             baseUrl: resource.baseUrl,
         });
+
         if (result.success) {
             setContent(atob(result.dataString));
         } else {

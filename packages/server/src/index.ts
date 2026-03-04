@@ -132,6 +132,9 @@ app.use(
             scheme: "exact",
             network: `eip155:${config.caip2}`,
             price: async (context: HTTPRequestContext) => {
+
+              console.log('adjkhfajhkfajdfkasddfj');
+
               const owner = resolveParam(context.adapter.getQueryParam?.("owner")) as Address;
               const name = resolveParam(context.adapter.getQueryParam?.("name")).trim();
               const tag = resolveParam(context.adapter.getQueryParam?.("tag")).trim();
