@@ -25,6 +25,8 @@ const gateway = getEnv("PINATA_GATEWAY");
 const usdcContractAddress = getEnv("USDC_CONTRACT_ADDR");
 const account = privateKeyToAccount(getEnv("EVM_PRIVATE_KEY") as `0x${string}`);
 
+console.log(`facilitatorHost:Port=${facilitatorHost}:${facilitatorPort}`);
+
 // the fangorn config derived from chain
 const config = process.env.CHAIN! === FangornConfig.ArbitrumSepolia.chainName ?
   FangornConfig.ArbitrumSepolia : FangornConfig.BaseSepolia;
@@ -138,6 +140,7 @@ app.use(
               const price = entry.gadgetDescriptor.params!.price as string;
               const commitment = await computeTagCommitment(owner, name, tag, price);
               const amount = Math.round(parseFloat(price) * 1_000_000).toString();
+
               return {
                 amount,
                 asset: usdcContractAddress,
