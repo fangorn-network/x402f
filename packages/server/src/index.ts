@@ -18,7 +18,7 @@ const getEnv = (key: string): string => {
 };
 
 const facilitatorUrl = process.env.FACILITATOR_URL || '';
-const usdcDomainName = process.env.USDC_DOMAIN_NAME!;
+const usdcDomainName = getEnv("USDC_DOMAIN_NAME");
 const port = parseInt(process.env.SERVER_PORT!) || 0;
 const jwt = getEnv("PINATA_JWT");
 const gateway = getEnv("PINATA_GATEWAY");
