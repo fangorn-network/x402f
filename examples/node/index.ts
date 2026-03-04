@@ -19,8 +19,7 @@ const config = envChain == "arbitrumSepolia" ? FangornConfig.ArbitrumSepolia : F
 async function nodeExample() {
 
     const account = privateKeyToAccount(getEnv("EVM_PRIVATE_KEY") as Hex);
-    const resourceServerHost = getEnv("RESOURCE_SERVER_DOMAIN");
-    const resourceServerPort = getEnv("SERVER_PORT");
+    const resourceServerUrl = getEnv("RESOURCE_SERVER_URL");
     const pinataJwt = getEnv("PINATA_JWT");
     const pinataGateway = getEnv("PINATA_GATEWAY");
 
@@ -48,7 +47,8 @@ async function nodeExample() {
         owner,
         datasourceName,
         tag,
-        baseUrl: `${resourceServerHost}:${resourceServerPort}`,
+        baseUrl: resourceServerUrl,
+        authToken: process.env.AUTH_TOKEN!,
     });
 
     if (result.success) {

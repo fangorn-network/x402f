@@ -18,6 +18,7 @@
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "fangorn-sdk": "2026.2.2-7.0",
+    "google-auth-library": "^10.6.1",
     "pinata": "^2.5.5",
     "viem": "^2.46.3"
   },

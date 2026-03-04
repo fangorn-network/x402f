@@ -7,6 +7,7 @@ import { createWalletClient, http } from "viem";
 import { Address, privateKeyToAccount } from "viem/accounts";
 import { computeTagCommitment, Fangorn, FangornConfig, LitEncryptionService, PinataStorage } from "fangorn-sdk";
 import { FangornEvmScheme } from "./FangornEvmScheme.js";
+import { GoogleAuth } from 'google-auth-library';
 
 const getEnv = (key: string): string => {
   const value = process.env[key];
@@ -16,8 +17,7 @@ const getEnv = (key: string): string => {
   return value;
 };
 
-const facilitatorHost = process.env.FACILITATOR_DOMAIN || '';
-const facilitatorPort = process.env.FACILITATOR_PORT || 0;
+const facilitatorUrl = process.env.FACILITATOR_URL || '';
 const usdcDomainName = process.env.USDC_DOMAIN_NAME!;
 const port = parseInt(process.env.SERVER_PORT!) || 0;
 const jwt = getEnv("PINATA_JWT");
@@ -31,27 +31,29 @@ const config = process.env.CHAIN! === FangornConfig.ArbitrumSepolia.chainName ?
 
 const app = express();
 
-// Note: must register this BEFORE express
-// app.use(cors({
-//   origin: 'http://localhost:5173',
-//   exposedHeaders: ['payment-required', 'payment-response'],
-//   methods: ['GET'], 
-// }));
+// app.use(cors());
 app.use(cors({
   origin: '*', // For testing, allow all
   exposedHeaders: ['payment-required', 'payment-response', 'x402-commitment'],
-  methods: ['GET', 'POST', 'OPTIONS'], 
+  methods: ['GET', 'POST', 'OPTIONS'],
 }));
-// app.use(cors());
 
 app.use(express.json());
 
-// setup
-// TOOO: read port from env vars
-const facilitatorClient = new HTTPFacilitatorClient({
-  url: `${facilitatorHost}:${facilitatorPort}`
-});
 
+const auth = new GoogleAuth();
+
+async function getAuthHeaders() {
+  const client = await auth.getIdTokenClient(facilitatorUrl);
+  const token = await client.idTokenProvider.fetchIdToken(facilitatorUrl);
+  const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
+  return { verify: headers, settle: headers, supported: headers };
+}
+
+const facilitatorClient = new HTTPFacilitatorClient({
+url: facilitatorUrl,
+  createAuthHeaders: getAuthHeaders,
+});
 
 const agentCard = {
   "capabilities": {
@@ -100,11 +102,7 @@ const server = new x402ResourceServer(facilitatorClient);
 server.register("eip155:*", new FangornEvmScheme());
 
 const encryptionService = await LitEncryptionService.init(config.chainName);
-
-// TODO: is this right?
-// const domain = `0.0.0.0:${port}`;
 const domain = process.env.RESOURCE_SERVER_DOMAIN || `localhost:${port}`;
-
 // storage via Pinata
 const storage = new PinataStorage(jwt, gateway);
 
@@ -115,8 +113,6 @@ const fangorn = await Fangorn.init(
   domain,
   config,
 );
-
-console.log('using usdc domain name ' + usdcDomainName);
 
 const resolveParam = (val: string | string[] | undefined): string => {
   const raw = Array.isArray(val) ? val[0] : val ?? "";

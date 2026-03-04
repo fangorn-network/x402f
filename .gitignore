@@ -2,3 +2,6 @@
 **/node_modules
 **/lit-auth-storage
 lib
+service-account.json
+**/key.json
+deploy.md
