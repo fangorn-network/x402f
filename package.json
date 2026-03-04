@@ -38,9 +38,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "google-auth-library": "^10.6.1"
-  },
+  "dependencies": { },
   "devDependencies": {
     "@types/node": "^25.1.0",
     "tsdown": "0.16.8",

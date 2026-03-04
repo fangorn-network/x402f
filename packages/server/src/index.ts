@@ -25,8 +25,6 @@ const gateway = getEnv("PINATA_GATEWAY");
 const usdcContractAddress = getEnv("USDC_CONTRACT_ADDR");
 const account = privateKeyToAccount(getEnv("EVM_PRIVATE_KEY") as `0x${string}`);
 
-console.log(`facilitatorHost:Port=${facilitatorHost}:${facilitatorPort}`);
-
 // the fangorn config derived from chain
 const config = process.env.CHAIN! === FangornConfig.ArbitrumSepolia.chainName ?
   FangornConfig.ArbitrumSepolia : FangornConfig.BaseSepolia;
@@ -132,9 +130,6 @@ app.use(
             scheme: "exact",
             network: `eip155:${config.caip2}`,
             price: async (context: HTTPRequestContext) => {
-
-              console.log('adjkhfajhkfajdfkasddfj');
-
               const owner = resolveParam(context.adapter.getQueryParam?.("owner")) as Address;
               const name = resolveParam(context.adapter.getQueryParam?.("name")).trim();
               const tag = resolveParam(context.adapter.getQueryParam?.("tag")).trim();
