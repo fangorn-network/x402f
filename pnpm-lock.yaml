@@ -24,8 +24,8 @@ importers:
   examples/node:
     dependencies:
       '@x402f/fetch':
-        specifier: workspace:*
-        version: link:../../packages/fetch
+        specifier: ^2026.3.10
+        version: 2026.3.10(@sinclair/typebox@0.34.48)(encoding@0.1.13)(ethers@5.8.0)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.24.3))(zod@3.24.3)
       fangorn-sdk:
         specifier: 2026.2.2-7.0
         version: 2026.2.2-7.0(@sinclair/typebox@0.34.48)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.24.3))(zod@3.24.3)
@@ -1811,6 +1811,11 @@ packages:
 
   '@x402/fetch@2.6.0':
     resolution: {integrity: sha512-OnHXw/mv76ig4UBJEgfQIWHSWcrgIOT2i8RxEuGl12QtaYwSgBcgDub2GdllL/iIB9OneM1m0UWlrPh23JdVjQ==}
+
+  '@x402f/fetch@2026.3.10':
+    resolution: {integrity: sha512-YoBtTZwOBnqCASpZHq4hCvfkiFcyiYJn+NVjdVnjTGxA9rycum/3cjoJIps4g1CC/Q/7f4R86/EArvd1GWvyNQ==}
+    peerDependencies:
+      viem: ^2.46.3
 
   abitype@1.0.8:
     resolution: {integrity: sha512-ZeiI6h3GnW06uYDLx0etQtX/p8E24UaHHBj57RSjK7YBFe7iuVn07EDpOeP451D06sF27VOz9JJPlIKJmXgkEg==}
@@ -8226,6 +8231,18 @@ snapshots:
     dependencies:
       zod: 3.25.76
 
+  '@x402/evm@2.6.0(ethers@5.8.0)(typescript@5.9.3)':
+    dependencies:
+      '@x402/core': 2.6.0
+      '@x402/extensions': 2.6.0(ethers@5.8.0)(typescript@5.9.3)
+      viem: 2.46.3(typescript@5.9.3)(zod@3.25.76)
+      zod: 3.25.76
+    transitivePeerDependencies:
+      - bufferutil
+      - ethers
+      - typescript
+      - utf-8-validate
+
   '@x402/evm@2.6.0(ethers@6.16.0)(typescript@5.9.3)':
     dependencies:
       '@x402/core': 2.6.0
@@ -8243,6 +8260,21 @@ snapshots:
       '@x402/core': 2.6.0
       '@x402/extensions': 2.6.0(ethers@6.16.0)(typescript@5.9.3)
       express: 5.2.1
+      viem: 2.46.3(typescript@5.9.3)(zod@3.25.76)
+      zod: 3.25.76
+    transitivePeerDependencies:
+      - bufferutil
+      - ethers
+      - typescript
+      - utf-8-validate
+
+  '@x402/extensions@2.6.0(ethers@5.8.0)(typescript@5.9.3)':
+    dependencies:
+      '@scure/base': 1.2.6
+      '@x402/core': 2.6.0
+      ajv: 8.18.0
+      siwe: 2.3.2(ethers@5.8.0)
+      tweetnacl: 1.0.3
       viem: 2.46.3(typescript@5.9.3)(zod@3.25.76)
       zod: 3.25.76
     transitivePeerDependencies:
@@ -8275,6 +8307,39 @@ snapshots:
       - bufferutil
       - typescript
       - utf-8-validate
+
+  '@x402f/fetch@2026.3.10(@sinclair/typebox@0.34.48)(encoding@0.1.13)(ethers@5.8.0)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.24.3))(zod@3.24.3)':
+    dependencies:
+      '@x402/core': 2.6.0
+      '@x402/evm': 2.6.0(ethers@5.8.0)(typescript@5.9.3)
+      '@x402/fetch': 2.6.0(typescript@5.9.3)
+      fangorn-sdk: 2026.2.2-7.0(@sinclair/typebox@0.34.48)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.24.3))(zod@3.24.3)
+      viem: 2.46.3(typescript@5.9.3)(zod@3.24.3)
+    transitivePeerDependencies:
+      - '@bufbuild/protobuf'
+      - '@grpc/grpc-js'
+      - '@sinclair/typebox'
+      - '@tanstack/query-core'
+      - '@types/react'
+      - arktype
+      - bufferutil
+      - debug
+      - encoding
+      - ethers
+      - express
+      - graphql
+      - immer
+      - openapi-types
+      - react
+      - react-dom
+      - react-native
+      - supports-color
+      - tslib
+      - typescript
+      - use-sync-external-store
+      - utf-8-validate
+      - valibot
+      - zod
 
   abitype@1.0.8(typescript@5.9.3)(zod@3.24.3):
     optionalDependencies:
