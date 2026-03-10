@@ -2,32 +2,9 @@
   "name": "x402f",
   "version": "0.0.1",
   "description": "x402 + Fangorn",
-  "main": "lib/index.js",
+  "private": true,
   "type": "module",
-  "files": [
-    "lib/",
-    "package.json"
-  ],
-  "module": "./lib/index.js",
-  "exports": {
-    ".": "./lib/index.js"
-  },
-  "compilerOptions": {
-    "target": "ESNext",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "lib": [
-      "ESNext"
-    ],
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "strict": true,
-    "outDir": "./dist",
-    "rootDir": "./src"
-  },
-  "include": [
-    "src/**/*"
-  ],
+  "workspaces": ["examples/*", "packages/*"],
   "scripts": {
     "client:node": "npx tsx --env-file=./examples/node/.env examples/node/index.ts",
     "server": "npx tsx --env-file=./packages/server/.env packages/server/src/index.ts",
@@ -38,13 +15,12 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/node": "^25.1.0",
+    "tsdown": "0.16.8",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3",
-    "tsdown": "0.16.8"
+    "typescript": "^5.9.3"
   },
   "directories": {
     "example": "examples"
@@ -57,5 +33,5 @@
     "url": "https://github.com/fangorn-network/x402f/issues"
   },
   "homepage": "https://github.com/fangorn-network/x402f#readme",
-  "packageManager": "pnpm@10.27.0+sha512.72d699da16b1179c14ba9e64dc71c9a40988cbdc65c264cb0e489db7de917f20dcf4d64d8723625f2969ba52d4b7e2a1170682d9ac2a5dcaeaab732b7e16f04a"
+  "packageManager": "pnpm@10.27.0+sha512.72d699da16b1179c14ba9e64dc71c9a40988cbdc65c264cb0e489db7de917f20dcf4d64d8723625f2969ba52d4b7e16f04a"
 }

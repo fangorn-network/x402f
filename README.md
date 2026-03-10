@@ -1,6 +1,6 @@
 # x402f
 
-> Pay-per-use data APIs without trusting the server.
+> Trust-minimized, Programmable,            Pay-per-use data APIs
 
 **x402f** extends the [x402 protocol](https://x402.org) to invert the trust model entirely: the server never holds plaintext, never handles payments, and cannot withhold data — even if it goes offline.
 

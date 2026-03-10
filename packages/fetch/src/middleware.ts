@@ -47,6 +47,7 @@ export interface FetchResourceOptions {
     tag: string;
     baseUrl?: string;
     endpoint?: string;
+    authToken?: string; 
 }
 
 export interface FetchResourceResult {
@@ -110,6 +111,7 @@ export class FangornX402Middleware {
             tag,
             baseUrl = "http://1.2.3.4:4021",
             endpoint = "/",
+            authToken,
         } = options;
 
         try {
@@ -119,7 +121,10 @@ export class FangornX402Middleware {
                 `${baseUrl}${endpoint}?${params.toString()}`,
                 {
                     method: "GET",
-                    headers: { "Accept": "application/json" },
+                    headers: { 
+                        "Accept": "application/json",
+                        "Authorization": `Bearer ${authToken}`,
+                    },
                 }
             );
 
