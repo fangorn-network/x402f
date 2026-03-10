@@ -24,6 +24,7 @@ const jwt = getEnv("PINATA_JWT");
 const gateway = getEnv("PINATA_GATEWAY");
 const usdcContractAddress = getEnv("USDC_CONTRACT_ADDR");
 const account = privateKeyToAccount(getEnv("EVM_PRIVATE_KEY") as `0x${string}`);
+const gcpAuth = getEnv("GCP_AUTH");
 
 console.log(`facilitatorUrl=${facilitatorUrl}`);
 
@@ -42,18 +43,20 @@ app.use(cors({
 
 app.use(express.json());
 
-
 const auth = new GoogleAuth();
 
 async function getAuthHeaders() {
-  const client = await auth.getIdTokenClient(facilitatorUrl);
-  const token = await client.idTokenProvider.fetchIdToken(facilitatorUrl);
+  let token = '';
+  if (gcpAuth === "true") {
+    const client = await auth.getIdTokenClient(facilitatorUrl);
+    token = await client.idTokenProvider.fetchIdToken(facilitatorUrl);
+  }
   const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
   return { verify: headers, settle: headers, supported: headers };
 }
 
 const facilitatorClient = new HTTPFacilitatorClient({
-url: facilitatorUrl,
+  url: facilitatorUrl,
   createAuthHeaders: getAuthHeaders,
 });
 
