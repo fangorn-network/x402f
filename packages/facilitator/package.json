@@ -1,9 +1,18 @@
 {
   "name": "@x402f/facilitator",
   "version": "0.0.1",
-  "description": "The x402f facilitator",
+  "description": "x402f facilitator",
   "type": "module",
-  "main": "src/index.js",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "scripts": {
     "start": "npx tsx --env-file=.env src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -21,5 +30,8 @@
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

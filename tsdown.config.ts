@@ -4,6 +4,6 @@ export default defineConfig({
 	dts: true,
 	entry: ["packages/**/*.ts", "!packages/**/*.test.*"],
 	fixedExtension: false,
-	outDir: "lib",
+	outDir: "dist",
 	unbundle: true,
 });

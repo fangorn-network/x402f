@@ -8,12 +8,12 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^13.5.0",
+    "@x402f/fetch": "file:../../../packages/fetch/dist/",
+    "fangorn-sdk": "2026.2.2-7.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "wagmi": "^3.4.2",
-    "web-vitals": "^2.1.4",
-    "@x402f/fetch": "../../../packages/fetch",
-    "fangorn-sdk": "2026.2.2-7.0"
+    "web-vitals": "^2.1.4"
   },
   "scripts": {
     "start": "vite",
