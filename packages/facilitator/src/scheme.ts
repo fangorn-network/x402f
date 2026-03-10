@@ -28,6 +28,7 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
      * Replicates what x402 does: checks EIP-712 signature + amount/recipient match
      */
     async verify(payload: PaymentPayload, requirements: PaymentRequirements): Promise<VerifyResponse> {
+
         try {
             const p = payload.payload as any;
             const auth = p.authorization;

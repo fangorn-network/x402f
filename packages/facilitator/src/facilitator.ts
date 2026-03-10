@@ -1,13 +1,11 @@
 import { x402Facilitator } from "@x402/core/facilitator";
 import { Network } from "@x402/core/types";
 import { toFacilitatorEvmSigner } from "@x402/evm";
-import { ExactEvmScheme } from "@x402/evm/exact/facilitator";
 import { ExactEvmSchemeV1 } from "@x402/evm/exact/v1/facilitator";
-import { Chain, createWalletClient, Hex, http, publicActions } from "viem";
+import { AppConfig, FangornConfig } from "fangorn-sdk";
+import { createWalletClient, http, publicActions } from "viem";
 import { Account, Address, privateKeyToAccount } from "viem/accounts";
-import { arbitrumSepolia, baseSepolia } from "viem/chains";
-import { ContentRegistryScheme } from "./scheme";
-import { AppConfig, FangornConfig } from "fangorn-sdk/lib/config";
+import { ContentRegistryScheme } from "./scheme.js";
 
 /**
  * Initialize and configure the x402 facilitator with EVM and SVM support

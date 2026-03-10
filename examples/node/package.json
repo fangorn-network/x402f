@@ -10,7 +10,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "viem": "^2.45.0",
-    "x402f": "../../src/"
+    "fangorn-sdk": "2026.2.2-7.0",
+    "viem": "2.46.3",
+    "@x402f/fetch": "workspace:*"
   }
 }

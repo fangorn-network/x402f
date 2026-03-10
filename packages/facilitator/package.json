@@ -1,0 +1,37 @@
+{
+  "name": "@x402f/facilitator",
+  "version": "2026.03.10",
+  "description": "The x402f facilitator",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "start": "npx tsx --env-file=.env src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@x402/core": "^2.5.0",
+    "@x402/evm": "^2.5.0",
+    "@x402/fetch": "^2.5.0",
+    "express": "^5.2.1",
+    "fangorn-sdk": "2026.2.2-7.0",
+    "viem": "^2.46.3"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

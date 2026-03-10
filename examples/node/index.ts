@@ -1,9 +1,17 @@
 import { createWalletClient, http, type Hex } from "viem";
 import { Address, privateKeyToAccount } from "viem/accounts";
-import { getEnv } from "../../src";
-import { createFangornMiddleware } from "../../src/client/middleware";
 import { atob } from "node:buffer";
-import { FangornConfig } from "fangorn-sdk/lib/config";
+import { createFangornMiddleware } from "@x402f/fetch";
+import { FangornConfig } from "fangorn-sdk";
+
+
+const getEnv = (key: string): string => {
+    const value = process.env[key];
+    if (!value) {
+        throw new Error(`Environment variable ${key} is not set`);
+    }
+    return value;
+};
 
 const envChain = process.env.CHAIN!;
 const config = envChain == "arbitrumSepolia" ? FangornConfig.ArbitrumSepolia : FangornConfig.BaseSepolia;
@@ -11,8 +19,7 @@ const config = envChain == "arbitrumSepolia" ? FangornConfig.ArbitrumSepolia : F
 async function nodeExample() {
 
     const account = privateKeyToAccount(getEnv("EVM_PRIVATE_KEY") as Hex);
-    const resourceServerHost = getEnv("RESOURCE_SERVER_DOMAIN");
-    const resourceServerPort = getEnv("SERVER_PORT");
+    const resourceServerUrl = getEnv("RESOURCE_SERVER_URL");
     const pinataJwt = getEnv("PINATA_JWT");
     const pinataGateway = getEnv("PINATA_GATEWAY");
 
@@ -32,21 +39,19 @@ async function nodeExample() {
         pinataGateway
     );
 
-    // 0x147c24c5Ea2f1EE1ac42AD16820De23bBba45Ef6
-    const owner = "0x147c24c5Ea2f1EE1ac42AD16820De23bBba45Ef6" as Address; 
-    const datasourceName = "220";
-    const tag = "test.txt";
+    const owner = "0x147c24c5Ea2f1EE1ac42AD16820De23bBba45Ef6" as Address;
+    const datasourceName = "fangorn";
+    const tag = "helloFangorn.txt";
 
     const result = await middleware.fetchResource({
         owner,
         datasourceName,
         tag,
-        baseUrl: `${resourceServerHost}:${resourceServerPort}`,
+        baseUrl: resourceServerUrl,
     });
 
     if (result.success) {
-        console.log("Decrypted result:", atob(result.dataString));
-        console.log("Already paid?", result.alreadyPaid);
+        console.log("Decrypted result:", atob((result as any).dataString));
         process.exit(0)
     } else {
         console.error("Failed:", result.error);

@@ -1,6 +1,13 @@
-# Getting Started with Create React App
+# x402f React Demo
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Setup
+
+Create a `.env` file at the root and specify the pinata JWT and gateway:
+
+```
+VITE_PINATA_JWT=
+VITE_PINATA_GATEWAY=
+```
 
 ## Available Scripts
 
