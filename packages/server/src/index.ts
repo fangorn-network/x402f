@@ -16,8 +16,7 @@ const getEnv = (key: string): string => {
   return value;
 };
 
-const facilitatorHost = process.env.FACILITATOR_DOMAIN || '';
-const facilitatorPort = process.env.FACILITATOR_PORT || 0;
+const facilitatorUrl = process.env.FACILITATOR_URL || '';
 const usdcDomainName = process.env.USDC_DOMAIN_NAME!;
 const port = parseInt(process.env.SERVER_PORT!) || 0;
 const jwt = getEnv("PINATA_JWT");
@@ -25,7 +24,7 @@ const gateway = getEnv("PINATA_GATEWAY");
 const usdcContractAddress = getEnv("USDC_CONTRACT_ADDR");
 const account = privateKeyToAccount(getEnv("EVM_PRIVATE_KEY") as `0x${string}`);
 
-console.log(`facilitatorHost:Port=${facilitatorHost}:${facilitatorPort}`);
+console.log(`facilitatorUrl=${facilitatorUrl}`);
 
 // the fangorn config derived from chain
 const config = process.env.CHAIN! === FangornConfig.ArbitrumSepolia.chainName ?
@@ -42,18 +41,14 @@ const app = express();
 app.use(cors({
   origin: '*', // For testing, allow all
   exposedHeaders: ['payment-required', 'payment-response', 'x402-commitment'],
-  methods: ['GET', 'POST', 'OPTIONS'], 
+  methods: ['GET', 'POST', 'OPTIONS'],
 }));
 // app.use(cors());
 
 app.use(express.json());
 
 // setup
-// TOOO: read port from env vars
-const facilitatorClient = new HTTPFacilitatorClient({
-  url: `${facilitatorHost}:${facilitatorPort}`
-});
-
+const facilitatorClient = new HTTPFacilitatorClient({ url: facilitatorUrl });
 
 const agentCard = {
   "capabilities": {
@@ -85,7 +80,7 @@ const agentCard = {
   "name": "local-testfile-agent",
   "description": "This is the best datasource agent for receiving test text files",
   "version": "0.0.1",
-  "url": "http://localhost:4021",
+  "url": "http://localhost:4021", // this needs to be updated also
   "provider": {
     "organization": "Fangorn",
     "url": "https://fangorn.network"

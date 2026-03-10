@@ -19,8 +19,7 @@ const config = envChain == "arbitrumSepolia" ? FangornConfig.ArbitrumSepolia : F
 async function nodeExample() {
 
     const account = privateKeyToAccount(getEnv("EVM_PRIVATE_KEY") as Hex);
-    const resourceServerHost = getEnv("RESOURCE_SERVER_DOMAIN");
-    const resourceServerPort = getEnv("SERVER_PORT");
+    const resourceServerUrl = getEnv("RESOURCE_SERVER_URL");
     const pinataJwt = getEnv("PINATA_JWT");
     const pinataGateway = getEnv("PINATA_GATEWAY");
 
@@ -40,15 +39,16 @@ async function nodeExample() {
         pinataGateway
     );
 
+    // note: this file is free <3
     const owner = "0x147c24c5Ea2f1EE1ac42AD16820De23bBba45Ef6" as Address; 
-    const datasourceName = "demo";
+    const datasourceName = "fangorn";
     const tag = "helloFangorn.txt";
 
     const result = await middleware.fetchResource({
         owner,
         datasourceName,
         tag,
-        baseUrl: `${resourceServerHost}:${resourceServerPort}`,
+        baseUrl: `${resourceServerUrl}`,
     });
 
     if (result.success) {

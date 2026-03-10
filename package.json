@@ -29,9 +29,9 @@
     "src/**/*"
   ],
   "scripts": {
-    "client:node": "npx tsx --env-file=.env examples/node/index.ts",
-    "server": "npx tsx --env-file=.env packages/server/src/index.ts",
-    "facilitator": "npx tsx --env-file=.env packages/facilitator/src/index.ts",
+    "client:node": "npx tsx --env-file=./examples/node/.env examples/node/index.ts",
+    "server": "npx tsx --env-file=./packages/server/.env packages/server/src/index.ts",
+    "facilitator": "npx tsx --env-file=./packages/facilitator/.env packages/facilitator/src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsdown"
   },

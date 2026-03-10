@@ -1,6 +1,6 @@
 {
   "name": "@x402f/facilitator",
-  "version": "0.0.1",
+  "version": "2026.03.10",
   "description": "The x402f facilitator",
   "type": "module",
   "main": "src/index.js",
