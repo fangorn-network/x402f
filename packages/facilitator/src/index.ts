@@ -111,7 +111,7 @@ app.get("/supported", async (req, res) => {
   }
 });
 
-const port = parseInt(process.env.PORT!) || 0;
+const port = parseInt(process.env.FACILITATOR_PORT!) || 0;
 
 // Start the server
 app.listen(port, '0.0.0.0', () => {
