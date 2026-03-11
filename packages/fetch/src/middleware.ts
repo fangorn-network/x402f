@@ -1,7 +1,7 @@
 import { x402Client } from "@x402/core/client";
 import { createPublicClient, http, type Address, type Hex, type WalletClient } from "viem";
 import { ExactEvmScheme } from "@x402/evm/exact/client";
-import { AppConfig, Fangorn, LitEncryptionService, PinataStorage } from "fangorn-sdk";
+import { AppConfig, Fangorn, LitEncryptionService, PinataStorage } from "@fangorn-network/sdk";
 import { wrapFetchWithPaymentFromConfig } from "@x402/fetch";
 import { ClientEvmSigner } from "@x402/evm";
 

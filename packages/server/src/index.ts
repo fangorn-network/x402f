@@ -5,7 +5,7 @@ import { x402ResourceServer, HTTPFacilitatorClient } from "@x402/core/server";
 import type { HTTPRequestContext } from "@x402/core/server";
 import { createWalletClient, http } from "viem";
 import { Address, privateKeyToAccount } from "viem/accounts";
-import { computeTagCommitment, Fangorn, FangornConfig, LitEncryptionService, PinataStorage } from "fangorn-sdk";
+import { computeTagCommitment, Fangorn, FangornConfig, LitEncryptionService, PinataStorage } from "@fangorn-network/sdk";
 import { FangornEvmScheme } from "./FangornEvmScheme.js";
 import { GoogleAuth } from 'google-auth-library';
 

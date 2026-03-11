@@ -7,7 +7,7 @@ import {
     Network
 } from "@x402/core/types";
 import { FacilitatorEvmSigner } from "@x402/evm";
-import { fieldToHex, SETTLEMENT_TRACKER_ABI } from "fangorn-sdk";
+import { fieldToHex, SETTLEMENT_TRACKER_ABI } from "@fangorn-network/sdk";
 import { Hex, parseSignature, toHex, verifyTypedData } from "viem";
 
 export class ContentRegistryScheme implements SchemeNetworkFacilitator {

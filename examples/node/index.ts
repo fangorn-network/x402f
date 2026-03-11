@@ -2,7 +2,7 @@ import { createWalletClient, http, type Hex } from "viem";
 import { Address, privateKeyToAccount } from "viem/accounts";
 import { atob } from "node:buffer";
 import { createFangornMiddleware } from "@x402f/fetch";
-import { FangornConfig } from "fangorn-sdk";
+import { FangornConfig } from "@fangorn-network/sdk";
 
 
 const getEnv = (key: string): string => {

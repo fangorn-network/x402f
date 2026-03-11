@@ -24,7 +24,7 @@
     "@x402/evm": "^2.5.0",
     "@x402/fetch": "^2.5.0",
     "express": "^5.2.1",
-    "fangorn-sdk": "2026.2.2-7.0",
+    "@fangorn-network/sdk": "2026.3.11",
     "viem": "^2.46.3"
   },
   "devDependencies": {

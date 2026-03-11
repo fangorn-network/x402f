@@ -23,18 +23,22 @@ importers:
 
   examples/node:
     dependencies:
-      '@x402f/fetch':
-        specifier: ^2026.3.10
-        version: 2026.3.10(@sinclair/typebox@0.34.48)(encoding@0.1.13)(ethers@5.8.0)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.24.3))(zod@3.24.3)
-      fangorn-sdk:
-        specifier: 2026.2.2-7.0
-        version: 2026.2.2-7.0(@sinclair/typebox@0.34.48)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.24.3))(zod@3.24.3)
+      '@fangorn-network/sdk':
+        specifier: 2026.3.11
+        version: 2026.3.11(@sinclair/typebox@0.34.48)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.24.3)
       viem:
         specifier: 2.46.3
         version: 2.46.3(typescript@5.9.3)(zod@3.24.3)
+    devDependencies:
+      '@x402f/fetch':
+        specifier: ^2026.3.10
+        version: 2026.3.10(@sinclair/typebox@0.34.48)(encoding@0.1.13)(ethers@5.8.0)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.24.3))(zod@3.24.3)
 
   packages/facilitator:
     dependencies:
+      '@fangorn-network/sdk':
+        specifier: 2026.3.11
+        version: 2026.3.11(@sinclair/typebox@0.34.48)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.25.76)
       '@x402/core':
         specifier: ^2.5.0
         version: 2.6.0
@@ -47,9 +51,6 @@ importers:
       express:
         specifier: ^5.2.1
         version: 5.2.1
-      fangorn-sdk:
-        specifier: 2026.2.2-7.0
-        version: 2026.2.2-7.0(@sinclair/typebox@0.34.48)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))(zod@3.25.76)
       viem:
         specifier: ^2.46.3
         version: 2.46.3(typescript@5.9.3)(zod@3.25.76)
@@ -63,6 +64,9 @@ importers:
 
   packages/fetch:
     dependencies:
+      '@fangorn-network/sdk':
+        specifier: 2026.3.11
+        version: 2026.3.11(@sinclair/typebox@0.34.48)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.25.76)
       '@x402/core':
         specifier: ^2.5.0
         version: 2.6.0
@@ -72,9 +76,6 @@ importers:
       '@x402/fetch':
         specifier: ^2.5.0
         version: 2.6.0(typescript@5.9.3)
-      fangorn-sdk:
-        specifier: 2026.2.2-7.0
-        version: 2026.2.2-7.0(@sinclair/typebox@0.34.48)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))(zod@3.25.76)
     devDependencies:
       tsdown:
         specifier: ^0.21.1
@@ -85,6 +86,9 @@ importers:
 
   packages/server:
     dependencies:
+      '@fangorn-network/sdk':
+        specifier: 2026.3.11
+        version: 2026.3.11(@sinclair/typebox@0.34.48)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.25.76)
       '@x402/core':
         specifier: ^2.5.0
         version: 2.6.0
@@ -100,9 +104,6 @@ importers:
       express:
         specifier: ^5.2.1
         version: 5.2.1
-      fangorn-sdk:
-        specifier: 2026.2.2-7.0
-        version: 2026.2.2-7.0(@sinclair/typebox@0.34.48)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))(zod@3.25.76)
       google-auth-library:
         specifier: ^10.6.1
         version: 10.6.1
@@ -717,6 +718,11 @@ packages:
 
   '@ethersproject/wordlists@5.8.0':
     resolution: {integrity: sha512-2df9bbXicZws2Sb5S6ET493uJ0Z84Fjr3pC4tu/qlnZERibZCeUVuqdtt+7Tv9xxhUxHoIekIA7avrKUWHrezg==}
+
+  '@fangorn-network/sdk@2026.3.11':
+    resolution: {integrity: sha512-+vIHyEG7k9XZo+AjuxCoj/DtqXWNXtrg25TfozXWv+W86m26SMVsz31vj4CldcSrsAYzxyhRgAdc95TcUqQhnA==}
+    engines: {node: '>=20.19.0'}
+    hasBin: true
 
   '@graphql-typed-document-node/core@3.2.0':
     resolution: {integrity: sha512-mB9oAsNCm9aM3/SOv4YtBMqZbYj10R7dkq8byBqxGY/ncFwhf2oQzMV+LCRlWoDSEBJ3COiR1yeDvMtsoOsuFQ==}
@@ -3679,6 +3685,14 @@ packages:
       typescript:
         optional: true
 
+  ox@0.14.0:
+    resolution: {integrity: sha512-WLOB7IKnmI3Ol6RAqY7CJdZKl8QaI44LN91OGF1061YIeN6bL5IsFcdp7+oQShRyamE/8fW/CBRWhJAOzI35Dw==}
+    peerDependencies:
+      typescript: '>=5.4.0'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
   ox@0.6.9:
     resolution: {integrity: sha512-wi5ShvzE4eOcTwQVsIPdFr+8ycyX+5le/96iAJutaZAvCes1J0+RvpEPg5QDPDiaR0XQQAvZVl7AwqQcINuUug==}
     peerDependencies:
@@ -4683,6 +4697,14 @@ packages:
 
   viem@2.46.3:
     resolution: {integrity: sha512-2LJS+Hyh2sYjHXQtzfv1kU9pZx9dxFzvoU/ZKIcn0FNtOU0HQuIICuYdWtUDFHaGXbAdVo8J1eCvmjkL9JVGwg==}
+    peerDependencies:
+      typescript: '>=5.0.4'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
+  viem@2.47.1:
+    resolution: {integrity: sha512-frlK109+X5z2vlZeIGKa6Rxev6CcIpumV/VVhaIPc/QFotiB6t/CgUwkMlYfr4F2YNBZZ2l6jguWz2sY1XrQHw==}
     peerDependencies:
       typescript: '>=5.0.4'
     peerDependenciesMeta:
@@ -5828,6 +5850,102 @@ snapshots:
       '@ethersproject/properties': 5.8.0
       '@ethersproject/strings': 5.8.0
 
+  '@fangorn-network/sdk@2026.3.11(@sinclair/typebox@0.34.48)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.24.3)':
+    dependencies:
+      '@a2a-js/sdk': 0.3.11(express@5.2.1)
+      '@clack/prompts': 1.1.0
+      '@lit-protocol/access-control-conditions': 8.0.2(typescript@5.9.3)
+      '@lit-protocol/auth': 8.2.3(@sinclair/typebox@0.34.48)(encoding@0.1.13)(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.24.3))
+      '@lit-protocol/auth-helpers': 8.2.1(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.24.3))
+      '@lit-protocol/lit-client': 8.3.1(@sinclair/typebox@0.34.48)(encoding@0.1.13)(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.24.3))
+      '@lit-protocol/networks': 8.4.1(@sinclair/typebox@0.34.48)(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.24.3))
+      '@rolldown/binding-linux-x64-gnu': 1.0.0-beta.59
+      '@x402/core': 2.6.0
+      '@x402/evm': 2.6.0(ethers@6.16.0)(typescript@5.9.3)
+      agent0-sdk: 1.6.0(encoding@0.1.13)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(typescript@5.9.3)(zod@3.24.3)
+      buffer: 6.0.3
+      commander: 14.0.3
+      dotenv: 17.3.1
+      ethers: 6.16.0
+      imurmurhash: 0.1.4
+      multiformats: 13.4.2
+      node-localstorage: 3.0.5
+      pinata: 2.5.5(react@19.2.4)
+      solc: 0.8.34
+      viem: 2.47.1(typescript@5.9.3)(zod@3.24.3)
+    transitivePeerDependencies:
+      - '@bufbuild/protobuf'
+      - '@grpc/grpc-js'
+      - '@sinclair/typebox'
+      - '@tanstack/query-core'
+      - '@types/react'
+      - arktype
+      - bufferutil
+      - debug
+      - encoding
+      - express
+      - graphql
+      - immer
+      - openapi-types
+      - react
+      - react-dom
+      - react-native
+      - supports-color
+      - tslib
+      - typescript
+      - use-sync-external-store
+      - utf-8-validate
+      - valibot
+      - zod
+
+  '@fangorn-network/sdk@2026.3.11(@sinclair/typebox@0.34.48)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.25.76)':
+    dependencies:
+      '@a2a-js/sdk': 0.3.11(express@5.2.1)
+      '@clack/prompts': 1.1.0
+      '@lit-protocol/access-control-conditions': 8.0.2(typescript@5.9.3)
+      '@lit-protocol/auth': 8.2.3(@sinclair/typebox@0.34.48)(encoding@0.1.13)(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))
+      '@lit-protocol/auth-helpers': 8.2.1(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))
+      '@lit-protocol/lit-client': 8.3.1(@sinclair/typebox@0.34.48)(encoding@0.1.13)(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))
+      '@lit-protocol/networks': 8.4.1(@sinclair/typebox@0.34.48)(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))
+      '@rolldown/binding-linux-x64-gnu': 1.0.0-beta.59
+      '@x402/core': 2.6.0
+      '@x402/evm': 2.6.0(ethers@6.16.0)(typescript@5.9.3)
+      agent0-sdk: 1.6.0(encoding@0.1.13)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(typescript@5.9.3)(zod@3.25.76)
+      buffer: 6.0.3
+      commander: 14.0.3
+      dotenv: 17.3.1
+      ethers: 6.16.0
+      imurmurhash: 0.1.4
+      multiformats: 13.4.2
+      node-localstorage: 3.0.5
+      pinata: 2.5.5(react@19.2.4)
+      solc: 0.8.34
+      viem: 2.47.1(typescript@5.9.3)(zod@3.25.76)
+    transitivePeerDependencies:
+      - '@bufbuild/protobuf'
+      - '@grpc/grpc-js'
+      - '@sinclair/typebox'
+      - '@tanstack/query-core'
+      - '@types/react'
+      - arktype
+      - bufferutil
+      - debug
+      - encoding
+      - express
+      - graphql
+      - immer
+      - openapi-types
+      - react
+      - react-dom
+      - react-native
+      - supports-color
+      - tslib
+      - typescript
+      - use-sync-external-store
+      - utf-8-validate
+      - valibot
+      - zod
+
   '@graphql-typed-document-node/core@3.2.0(graphql@16.13.1)':
     dependencies:
       graphql: 16.13.1
@@ -6642,8 +6760,8 @@ snapshots:
       '@lit-protocol/contracts': 0.5.3(typescript@5.9.3)
       '@openagenda/verror': 3.1.4
       '@t3-oss/env-core': 0.13.8(typescript@5.9.3)(zod@3.24.3)
-      '@typechain/ethers-v6': 0.5.1(ethers@5.7.2)(typechain@8.3.2(typescript@5.9.3))(typescript@5.9.3)
-      ethers: 5.7.2
+      '@typechain/ethers-v6': 0.5.1(ethers@5.8.0)(typechain@8.3.2(typescript@5.9.3))(typescript@5.9.3)
+      ethers: 5.8.0
       tslib: 2.8.1
       typechain: 8.3.2(typescript@5.9.3)
       viem: 2.29.4(typescript@5.9.3)(zod@3.24.3)
@@ -6727,7 +6845,7 @@ snapshots:
       - utf-8-validate
       - valibot
 
-  '@lit-protocol/auth-helpers@8.2.0(react@19.2.4)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))':
+  '@lit-protocol/auth-helpers@8.2.0(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.24.3))':
     dependencies:
       '@ethersproject/contracts': 5.7.0
       '@ethersproject/providers': 5.7.0
@@ -6735,21 +6853,59 @@ snapshots:
       '@lit-protocol/access-control-conditions': 8.0.2(typescript@5.9.3)
       '@lit-protocol/access-control-conditions-schemas': 8.0.2(typescript@5.9.3)
       '@lit-protocol/constants': 9.0.0(typescript@5.9.3)
-      '@lit-protocol/contracts': 0.9.0(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))
+      '@lit-protocol/contracts': 0.9.0(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.24.3))
       '@lit-protocol/logger': 8.0.2
       '@lit-protocol/schemas': 8.0.2(typescript@5.9.3)
       '@lit-protocol/types': 8.0.2(typescript@5.9.3)
       '@openagenda/verror': 3.1.4
       '@t3-oss/env-core': 0.13.8(typescript@5.9.3)(zod@3.24.3)
       '@typechain/ethers-v6': 0.5.1(ethers@5.7.2)(typechain@8.3.2(typescript@5.9.3))(typescript@5.9.3)
-      '@wagmi/core': 2.22.1(react@19.2.4)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))
+      '@wagmi/core': 2.22.1(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.24.3))
       ethers: 5.7.2
       pino: 9.6.0
       siwe: 2.3.2(ethers@5.7.2)
       siwe-recap: 0.0.2-alpha.0(ethers@5.7.2)
       tslib: 2.8.1
       typechain: 8.3.2(typescript@5.9.3)
-      viem: 2.46.3(typescript@5.9.3)(zod@3.25.76)
+      viem: 2.47.1(typescript@5.9.3)(zod@3.24.3)
+      zod: 3.24.3
+      zod-validation-error: 3.4.0(zod@3.24.3)
+    transitivePeerDependencies:
+      - '@tanstack/query-core'
+      - '@types/react'
+      - arktype
+      - bufferutil
+      - immer
+      - react
+      - supports-color
+      - typescript
+      - use-sync-external-store
+      - utf-8-validate
+      - valibot
+
+  '@lit-protocol/auth-helpers@8.2.0(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))':
+    dependencies:
+      '@ethersproject/contracts': 5.7.0
+      '@ethersproject/providers': 5.7.0
+      '@ethersproject/transactions': 5.7.0
+      '@lit-protocol/access-control-conditions': 8.0.2(typescript@5.9.3)
+      '@lit-protocol/access-control-conditions-schemas': 8.0.2(typescript@5.9.3)
+      '@lit-protocol/constants': 9.0.0(typescript@5.9.3)
+      '@lit-protocol/contracts': 0.9.0(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))
+      '@lit-protocol/logger': 8.0.2
+      '@lit-protocol/schemas': 8.0.2(typescript@5.9.3)
+      '@lit-protocol/types': 8.0.2(typescript@5.9.3)
+      '@openagenda/verror': 3.1.4
+      '@t3-oss/env-core': 0.13.8(typescript@5.9.3)(zod@3.24.3)
+      '@typechain/ethers-v6': 0.5.1(ethers@5.7.2)(typechain@8.3.2(typescript@5.9.3))(typescript@5.9.3)
+      '@wagmi/core': 2.22.1(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))
+      ethers: 5.7.2
+      pino: 9.6.0
+      siwe: 2.3.2(ethers@5.7.2)
+      siwe-recap: 0.0.2-alpha.0(ethers@5.7.2)
+      tslib: 2.8.1
+      typechain: 8.3.2(typescript@5.9.3)
+      viem: 2.47.1(typescript@5.9.3)(zod@3.25.76)
       zod: 3.24.3
       zod-validation-error: 3.4.0(zod@3.24.3)
     transitivePeerDependencies:
@@ -6803,7 +6959,7 @@ snapshots:
       - utf-8-validate
       - valibot
 
-  '@lit-protocol/auth-helpers@8.2.1(react@19.2.4)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))':
+  '@lit-protocol/auth-helpers@8.2.1(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.24.3))':
     dependencies:
       '@ethersproject/contracts': 5.7.0
       '@ethersproject/providers': 5.7.0
@@ -6811,21 +6967,59 @@ snapshots:
       '@lit-protocol/access-control-conditions': 8.0.2(typescript@5.9.3)
       '@lit-protocol/access-control-conditions-schemas': 8.0.2(typescript@5.9.3)
       '@lit-protocol/constants': 9.0.1(typescript@5.9.3)
-      '@lit-protocol/contracts': 0.9.1(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))
+      '@lit-protocol/contracts': 0.9.1(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.24.3))
       '@lit-protocol/logger': 8.0.2
       '@lit-protocol/schemas': 8.0.3(typescript@5.9.3)
       '@lit-protocol/types': 8.0.4(typescript@5.9.3)
       '@openagenda/verror': 3.1.4
       '@t3-oss/env-core': 0.13.8(typescript@5.9.3)(zod@3.24.3)
       '@typechain/ethers-v6': 0.5.1(ethers@5.7.2)(typechain@8.3.2(typescript@5.9.3))(typescript@5.9.3)
-      '@wagmi/core': 2.22.1(react@19.2.4)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))
+      '@wagmi/core': 2.22.1(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.24.3))
       ethers: 5.7.2
       pino: 9.6.0
       siwe: 2.3.2(ethers@5.7.2)
       siwe-recap: 0.0.2-alpha.0(ethers@5.7.2)
       tslib: 2.8.1
       typechain: 8.3.2(typescript@5.9.3)
-      viem: 2.46.3(typescript@5.9.3)(zod@3.25.76)
+      viem: 2.47.1(typescript@5.9.3)(zod@3.24.3)
+      zod: 3.24.3
+      zod-validation-error: 3.4.0(zod@3.24.3)
+    transitivePeerDependencies:
+      - '@tanstack/query-core'
+      - '@types/react'
+      - arktype
+      - bufferutil
+      - immer
+      - react
+      - supports-color
+      - typescript
+      - use-sync-external-store
+      - utf-8-validate
+      - valibot
+
+  '@lit-protocol/auth-helpers@8.2.1(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))':
+    dependencies:
+      '@ethersproject/contracts': 5.7.0
+      '@ethersproject/providers': 5.7.0
+      '@ethersproject/transactions': 5.7.0
+      '@lit-protocol/access-control-conditions': 8.0.2(typescript@5.9.3)
+      '@lit-protocol/access-control-conditions-schemas': 8.0.2(typescript@5.9.3)
+      '@lit-protocol/constants': 9.0.1(typescript@5.9.3)
+      '@lit-protocol/contracts': 0.9.1(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))
+      '@lit-protocol/logger': 8.0.2
+      '@lit-protocol/schemas': 8.0.3(typescript@5.9.3)
+      '@lit-protocol/types': 8.0.4(typescript@5.9.3)
+      '@openagenda/verror': 3.1.4
+      '@t3-oss/env-core': 0.13.8(typescript@5.9.3)(zod@3.24.3)
+      '@typechain/ethers-v6': 0.5.1(ethers@5.7.2)(typechain@8.3.2(typescript@5.9.3))(typescript@5.9.3)
+      '@wagmi/core': 2.22.1(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))
+      ethers: 5.7.2
+      pino: 9.6.0
+      siwe: 2.3.2(ethers@5.7.2)
+      siwe-recap: 0.0.2-alpha.0(ethers@5.7.2)
+      tslib: 2.8.1
+      typechain: 8.3.2(typescript@5.9.3)
+      viem: 2.47.1(typescript@5.9.3)(zod@3.25.76)
       zod: 3.24.3
       zod-validation-error: 3.4.0(zod@3.24.3)
     transitivePeerDependencies:
@@ -6905,7 +7099,7 @@ snapshots:
       - utf-8-validate
       - valibot
 
-  '@lit-protocol/auth@8.2.3(@sinclair/typebox@0.34.48)(encoding@0.1.13)(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))':
+  '@lit-protocol/auth@8.2.3(@sinclair/typebox@0.34.48)(encoding@0.1.13)(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.24.3))':
     dependencies:
       '@ethersproject/contracts': 5.7.0
       '@ethersproject/providers': 5.7.0
@@ -6913,14 +7107,14 @@ snapshots:
       '@jest/globals': 30.2.0
       '@lit-protocol/access-control-conditions': 8.0.2(typescript@5.9.3)
       '@lit-protocol/access-control-conditions-schemas': 8.0.2(typescript@5.9.3)
-      '@lit-protocol/auth-helpers': 8.2.0(react@19.2.4)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))
+      '@lit-protocol/auth-helpers': 8.2.0(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.24.3))
       '@lit-protocol/constants': 9.0.1(typescript@5.9.3)
-      '@lit-protocol/contracts': 0.9.1(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))
+      '@lit-protocol/contracts': 0.9.1(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.24.3))
       '@lit-protocol/crypto': 8.1.0(typescript@5.9.3)
-      '@lit-protocol/lit-client': 8.3.1(@sinclair/typebox@0.34.48)(encoding@0.1.13)(react@19.2.4)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))
+      '@lit-protocol/lit-client': 8.3.1(@sinclair/typebox@0.34.48)(encoding@0.1.13)(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.24.3))
       '@lit-protocol/logger': 8.0.2
       '@lit-protocol/nacl': 7.1.1
-      '@lit-protocol/networks': 8.4.1(@sinclair/typebox@0.34.48)(react@19.2.4)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))
+      '@lit-protocol/networks': 8.4.1(@sinclair/typebox@0.34.48)(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.24.3))
       '@lit-protocol/schemas': 8.0.3(typescript@5.9.3)
       '@lit-protocol/types': 8.0.3(typescript@5.9.3)
       '@lit-protocol/uint8arrays': 7.1.1(typescript@5.9.3)
@@ -6932,7 +7126,7 @@ snapshots:
       '@simplewebauthn/typescript-types': 7.0.0
       '@t3-oss/env-core': 0.13.8(typescript@5.9.3)(zod@3.24.3)
       '@typechain/ethers-v6': 0.5.1(ethers@5.7.2)(typechain@8.3.2(typescript@5.9.3))(typescript@5.9.3)
-      '@wagmi/core': 2.22.1(react@19.2.4)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))
+      '@wagmi/core': 2.22.1(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.24.3))
       ajv: 8.12.0
       base64url: 3.0.1
       bs58: 6.0.0
@@ -6950,7 +7144,71 @@ snapshots:
       tslib: 2.8.1
       typechain: 8.3.2(typescript@5.9.3)
       typestub-ipfs-only-hash: 4.0.0(encoding@0.1.13)
-      viem: 2.46.3(typescript@5.9.3)(zod@3.25.76)
+      viem: 2.47.1(typescript@5.9.3)(zod@3.24.3)
+      zod: 3.24.3
+      zod-validation-error: 3.4.0(zod@3.24.3)
+    transitivePeerDependencies:
+      - '@sinclair/typebox'
+      - '@tanstack/query-core'
+      - '@types/react'
+      - arktype
+      - bufferutil
+      - encoding
+      - immer
+      - openapi-types
+      - react
+      - supports-color
+      - typescript
+      - use-sync-external-store
+      - utf-8-validate
+      - valibot
+
+  '@lit-protocol/auth@8.2.3(@sinclair/typebox@0.34.48)(encoding@0.1.13)(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))':
+    dependencies:
+      '@ethersproject/contracts': 5.7.0
+      '@ethersproject/providers': 5.7.0
+      '@ethersproject/transactions': 5.7.0
+      '@jest/globals': 30.2.0
+      '@lit-protocol/access-control-conditions': 8.0.2(typescript@5.9.3)
+      '@lit-protocol/access-control-conditions-schemas': 8.0.2(typescript@5.9.3)
+      '@lit-protocol/auth-helpers': 8.2.0(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))
+      '@lit-protocol/constants': 9.0.1(typescript@5.9.3)
+      '@lit-protocol/contracts': 0.9.1(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))
+      '@lit-protocol/crypto': 8.1.0(typescript@5.9.3)
+      '@lit-protocol/lit-client': 8.3.1(@sinclair/typebox@0.34.48)(encoding@0.1.13)(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))
+      '@lit-protocol/logger': 8.0.2
+      '@lit-protocol/nacl': 7.1.1
+      '@lit-protocol/networks': 8.4.1(@sinclair/typebox@0.34.48)(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))
+      '@lit-protocol/schemas': 8.0.3(typescript@5.9.3)
+      '@lit-protocol/types': 8.0.3(typescript@5.9.3)
+      '@lit-protocol/uint8arrays': 7.1.1(typescript@5.9.3)
+      '@lit-protocol/wasm': 8.1.0
+      '@noble/curves': 1.8.1
+      '@noble/hashes': 1.8.0
+      '@openagenda/verror': 3.1.4
+      '@simplewebauthn/browser': 7.2.0
+      '@simplewebauthn/typescript-types': 7.0.0
+      '@t3-oss/env-core': 0.13.8(typescript@5.9.3)(zod@3.24.3)
+      '@typechain/ethers-v6': 0.5.1(ethers@5.7.2)(typechain@8.3.2(typescript@5.9.3))(typescript@5.9.3)
+      '@wagmi/core': 2.22.1(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))
+      ajv: 8.12.0
+      base64url: 3.0.1
+      bs58: 6.0.0
+      cbor-web: 9.0.2
+      depd: 2.0.0
+      elysia: 1.2.25(@sinclair/typebox@0.34.48)(typescript@5.9.3)
+      ethers: 5.7.2
+      jose: 4.14.4
+      pako: 2.1.0
+      pino: 9.6.0
+      pino-caller: 4.0.0
+      siwe: 2.3.2(ethers@5.7.2)
+      siwe-recap: 0.0.2-alpha.0(ethers@5.7.2)
+      stytch: 12.4.0
+      tslib: 2.8.1
+      typechain: 8.3.2(typescript@5.9.3)
+      typestub-ipfs-only-hash: 4.0.0(encoding@0.1.13)
+      viem: 2.47.1(typescript@5.9.3)(zod@3.25.76)
       zod: 3.24.3
       zod-validation-error: 3.4.0(zod@3.24.3)
     transitivePeerDependencies:
@@ -6977,8 +7235,8 @@ snapshots:
       '@lit-protocol/types': 7.1.1
       '@openagenda/verror': 3.1.4
       depd: 2.0.0
-      ethers: 5.7.2
-      siwe: 2.3.2(ethers@5.7.2)
+      ethers: 5.8.0
+      siwe: 2.3.2(ethers@5.8.0)
       tslib: 1.14.1
     transitivePeerDependencies:
       - bufferutil
@@ -7060,10 +7318,15 @@ snapshots:
       typescript: 5.9.3
       viem: 2.46.3(typescript@5.9.3)(zod@3.24.3)
 
-  '@lit-protocol/contracts@0.9.0(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))':
+  '@lit-protocol/contracts@0.9.0(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.24.3))':
     dependencies:
       typescript: 5.9.3
-      viem: 2.46.3(typescript@5.9.3)(zod@3.25.76)
+      viem: 2.47.1(typescript@5.9.3)(zod@3.24.3)
+
+  '@lit-protocol/contracts@0.9.0(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))':
+    dependencies:
+      typescript: 5.9.3
+      viem: 2.47.1(typescript@5.9.3)(zod@3.25.76)
 
   '@lit-protocol/contracts@0.9.1(typescript@5.9.3)(viem@2.38.3(typescript@5.9.3)(zod@3.24.3))':
     dependencies:
@@ -7075,10 +7338,15 @@ snapshots:
       typescript: 5.9.3
       viem: 2.46.3(typescript@5.9.3)(zod@3.24.3)
 
-  '@lit-protocol/contracts@0.9.1(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))':
+  '@lit-protocol/contracts@0.9.1(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.24.3))':
     dependencies:
       typescript: 5.9.3
-      viem: 2.46.3(typescript@5.9.3)(zod@3.25.76)
+      viem: 2.47.1(typescript@5.9.3)(zod@3.24.3)
+
+  '@lit-protocol/contracts@0.9.1(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))':
+    dependencies:
+      typescript: 5.9.3
+      viem: 2.47.1(typescript@5.9.3)(zod@3.25.76)
 
   '@lit-protocol/crypto@8.1.0(typescript@5.9.3)':
     dependencies:
@@ -7169,7 +7437,7 @@ snapshots:
       - utf-8-validate
       - valibot
 
-  '@lit-protocol/lit-client@8.3.1(@sinclair/typebox@0.34.48)(encoding@0.1.13)(react@19.2.4)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))':
+  '@lit-protocol/lit-client@8.3.1(@sinclair/typebox@0.34.48)(encoding@0.1.13)(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.24.3))':
     dependencies:
       '@ethersproject/contracts': 5.7.0
       '@ethersproject/providers': 5.7.0
@@ -7177,13 +7445,13 @@ snapshots:
       '@jest/globals': 30.2.0
       '@lit-protocol/access-control-conditions': 8.0.2(typescript@5.9.3)
       '@lit-protocol/access-control-conditions-schemas': 8.0.2(typescript@5.9.3)
-      '@lit-protocol/auth-helpers': 8.2.0(react@19.2.4)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))
+      '@lit-protocol/auth-helpers': 8.2.0(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.24.3))
       '@lit-protocol/constants': 9.0.1(typescript@5.9.3)
-      '@lit-protocol/contracts': 0.9.1(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))
+      '@lit-protocol/contracts': 0.9.1(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.24.3))
       '@lit-protocol/crypto': 8.1.0(typescript@5.9.3)
       '@lit-protocol/logger': 8.0.2
       '@lit-protocol/nacl': 7.1.1
-      '@lit-protocol/networks': 8.4.1(@sinclair/typebox@0.34.48)(react@19.2.4)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))
+      '@lit-protocol/networks': 8.4.1(@sinclair/typebox@0.34.48)(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.24.3))
       '@lit-protocol/schemas': 8.0.3(typescript@5.9.3)
       '@lit-protocol/types': 8.0.3(typescript@5.9.3)
       '@lit-protocol/uint8arrays': 7.1.1(typescript@5.9.3)
@@ -7193,7 +7461,7 @@ snapshots:
       '@openagenda/verror': 3.1.4
       '@t3-oss/env-core': 0.13.8(typescript@5.9.3)(zod@3.24.3)
       '@typechain/ethers-v6': 0.5.1(ethers@5.7.2)(typechain@8.3.2(typescript@5.9.3))(typescript@5.9.3)
-      '@wagmi/core': 2.22.1(react@19.2.4)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))
+      '@wagmi/core': 2.22.1(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.24.3))
       ajv: 8.12.0
       bs58: 6.0.0
       elysia: 1.2.25(@sinclair/typebox@0.34.48)(typescript@5.9.3)
@@ -7206,7 +7474,63 @@ snapshots:
       tslib: 2.8.1
       typechain: 8.3.2(typescript@5.9.3)
       typestub-ipfs-only-hash: 4.0.0(encoding@0.1.13)
-      viem: 2.46.3(typescript@5.9.3)(zod@3.25.76)
+      viem: 2.47.1(typescript@5.9.3)(zod@3.24.3)
+      zod: 3.24.3
+      zod-validation-error: 3.4.0(zod@3.24.3)
+    transitivePeerDependencies:
+      - '@sinclair/typebox'
+      - '@tanstack/query-core'
+      - '@types/react'
+      - arktype
+      - bufferutil
+      - encoding
+      - immer
+      - openapi-types
+      - react
+      - supports-color
+      - typescript
+      - use-sync-external-store
+      - utf-8-validate
+      - valibot
+
+  '@lit-protocol/lit-client@8.3.1(@sinclair/typebox@0.34.48)(encoding@0.1.13)(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))':
+    dependencies:
+      '@ethersproject/contracts': 5.7.0
+      '@ethersproject/providers': 5.7.0
+      '@ethersproject/transactions': 5.7.0
+      '@jest/globals': 30.2.0
+      '@lit-protocol/access-control-conditions': 8.0.2(typescript@5.9.3)
+      '@lit-protocol/access-control-conditions-schemas': 8.0.2(typescript@5.9.3)
+      '@lit-protocol/auth-helpers': 8.2.0(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))
+      '@lit-protocol/constants': 9.0.1(typescript@5.9.3)
+      '@lit-protocol/contracts': 0.9.1(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))
+      '@lit-protocol/crypto': 8.1.0(typescript@5.9.3)
+      '@lit-protocol/logger': 8.0.2
+      '@lit-protocol/nacl': 7.1.1
+      '@lit-protocol/networks': 8.4.1(@sinclair/typebox@0.34.48)(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))
+      '@lit-protocol/schemas': 8.0.3(typescript@5.9.3)
+      '@lit-protocol/types': 8.0.3(typescript@5.9.3)
+      '@lit-protocol/uint8arrays': 7.1.1(typescript@5.9.3)
+      '@lit-protocol/wasm': 8.1.0
+      '@noble/curves': 1.8.1
+      '@noble/hashes': 1.8.0
+      '@openagenda/verror': 3.1.4
+      '@t3-oss/env-core': 0.13.8(typescript@5.9.3)(zod@3.24.3)
+      '@typechain/ethers-v6': 0.5.1(ethers@5.7.2)(typechain@8.3.2(typescript@5.9.3))(typescript@5.9.3)
+      '@wagmi/core': 2.22.1(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))
+      ajv: 8.12.0
+      bs58: 6.0.0
+      elysia: 1.2.25(@sinclair/typebox@0.34.48)(typescript@5.9.3)
+      ethers: 5.7.2
+      pako: 2.1.0
+      pino: 9.6.0
+      pino-caller: 4.0.0
+      siwe: 2.3.2(ethers@5.7.2)
+      siwe-recap: 0.0.2-alpha.0(ethers@5.7.2)
+      tslib: 2.8.1
+      typechain: 8.3.2(typescript@5.9.3)
+      typestub-ipfs-only-hash: 4.0.0(encoding@0.1.13)
+      viem: 2.47.1(typescript@5.9.3)(zod@3.25.76)
       zod: 3.24.3
       zod-validation-error: 3.4.0(zod@3.24.3)
     transitivePeerDependencies:
@@ -7288,7 +7612,7 @@ snapshots:
       - utf-8-validate
       - valibot
 
-  '@lit-protocol/networks@8.4.1(@sinclair/typebox@0.34.48)(react@19.2.4)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))':
+  '@lit-protocol/networks@8.4.1(@sinclair/typebox@0.34.48)(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.24.3))':
     dependencies:
       '@ethersproject/contracts': 5.7.0
       '@ethersproject/providers': 5.7.0
@@ -7296,9 +7620,9 @@ snapshots:
       '@jest/globals': 30.2.0
       '@lit-protocol/access-control-conditions': 8.0.2(typescript@5.9.3)
       '@lit-protocol/access-control-conditions-schemas': 8.0.2(typescript@5.9.3)
-      '@lit-protocol/auth-helpers': 8.2.0(react@19.2.4)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))
+      '@lit-protocol/auth-helpers': 8.2.0(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.24.3))
       '@lit-protocol/constants': 9.0.1(typescript@5.9.3)
-      '@lit-protocol/contracts': 0.9.1(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))
+      '@lit-protocol/contracts': 0.9.1(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.24.3))
       '@lit-protocol/crypto': 8.1.0(typescript@5.9.3)
       '@lit-protocol/logger': 8.0.2
       '@lit-protocol/nacl': 7.1.1
@@ -7311,7 +7635,7 @@ snapshots:
       '@openagenda/verror': 3.1.4
       '@t3-oss/env-core': 0.13.8(typescript@5.9.3)(zod@3.24.3)
       '@typechain/ethers-v6': 0.5.1(ethers@5.7.2)(typechain@8.3.2(typescript@5.9.3))(typescript@5.9.3)
-      '@wagmi/core': 2.22.1(react@19.2.4)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))
+      '@wagmi/core': 2.22.1(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.24.3))
       ajv: 8.12.0
       bs58: 6.0.0
       elysia: 1.2.25(@sinclair/typebox@0.34.48)(typescript@5.9.3)
@@ -7324,7 +7648,61 @@ snapshots:
       siwe-recap: 0.0.2-alpha.0(ethers@5.7.2)
       tslib: 2.8.1
       typechain: 8.3.2(typescript@5.9.3)
-      viem: 2.46.3(typescript@5.9.3)(zod@3.25.76)
+      viem: 2.47.1(typescript@5.9.3)(zod@3.24.3)
+      zod: 3.24.3
+      zod-validation-error: 3.4.0(zod@3.24.3)
+    transitivePeerDependencies:
+      - '@sinclair/typebox'
+      - '@tanstack/query-core'
+      - '@types/react'
+      - arktype
+      - bufferutil
+      - immer
+      - openapi-types
+      - react
+      - supports-color
+      - typescript
+      - use-sync-external-store
+      - utf-8-validate
+      - valibot
+
+  '@lit-protocol/networks@8.4.1(@sinclair/typebox@0.34.48)(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))':
+    dependencies:
+      '@ethersproject/contracts': 5.7.0
+      '@ethersproject/providers': 5.7.0
+      '@ethersproject/transactions': 5.7.0
+      '@jest/globals': 30.2.0
+      '@lit-protocol/access-control-conditions': 8.0.2(typescript@5.9.3)
+      '@lit-protocol/access-control-conditions-schemas': 8.0.2(typescript@5.9.3)
+      '@lit-protocol/auth-helpers': 8.2.0(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))
+      '@lit-protocol/constants': 9.0.1(typescript@5.9.3)
+      '@lit-protocol/contracts': 0.9.1(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))
+      '@lit-protocol/crypto': 8.1.0(typescript@5.9.3)
+      '@lit-protocol/logger': 8.0.2
+      '@lit-protocol/nacl': 7.1.1
+      '@lit-protocol/schemas': 8.0.3(typescript@5.9.3)
+      '@lit-protocol/types': 8.0.3(typescript@5.9.3)
+      '@lit-protocol/uint8arrays': 7.1.1(typescript@5.9.3)
+      '@lit-protocol/wasm': 8.1.0
+      '@noble/curves': 1.8.1
+      '@noble/hashes': 1.8.0
+      '@openagenda/verror': 3.1.4
+      '@t3-oss/env-core': 0.13.8(typescript@5.9.3)(zod@3.24.3)
+      '@typechain/ethers-v6': 0.5.1(ethers@5.7.2)(typechain@8.3.2(typescript@5.9.3))(typescript@5.9.3)
+      '@wagmi/core': 2.22.1(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))
+      ajv: 8.12.0
+      bs58: 6.0.0
+      elysia: 1.2.25(@sinclair/typebox@0.34.48)(typescript@5.9.3)
+      ethers: 5.7.2
+      node-localstorage: 3.0.5
+      pako: 2.1.0
+      pino: 9.6.0
+      pino-caller: 4.0.0
+      siwe: 2.3.2(ethers@5.7.2)
+      siwe-recap: 0.0.2-alpha.0(ethers@5.7.2)
+      tslib: 2.8.1
+      typechain: 8.3.2(typescript@5.9.3)
+      viem: 2.47.1(typescript@5.9.3)(zod@3.25.76)
       zod: 3.24.3
       zod-validation-error: 3.4.0(zod@3.24.3)
     transitivePeerDependencies:
@@ -7393,8 +7771,8 @@ snapshots:
       '@ethersproject/abstract-provider': 5.7.0
       '@lit-protocol/accs-schemas': 0.0.24
       depd: 2.0.0
-      ethers: 5.7.2
-      siwe: 2.3.2(ethers@5.7.2)
+      ethers: 5.8.0
+      siwe: 2.3.2(ethers@5.8.0)
       tslib: 1.14.1
     transitivePeerDependencies:
       - bufferutil
@@ -8213,11 +8591,25 @@ snapshots:
       - react
       - use-sync-external-store
 
-  '@wagmi/core@2.22.1(react@19.2.4)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))':
+  '@wagmi/core@2.22.1(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.24.3))':
     dependencies:
       eventemitter3: 5.0.1
       mipd: 0.0.7(typescript@5.9.3)
-      viem: 2.46.3(typescript@5.9.3)(zod@3.25.76)
+      viem: 2.47.1(typescript@5.9.3)(zod@3.24.3)
+      zustand: 5.0.0(react@19.2.4)
+    optionalDependencies:
+      typescript: 5.9.3
+    transitivePeerDependencies:
+      - '@types/react'
+      - immer
+      - react
+      - use-sync-external-store
+
+  '@wagmi/core@2.22.1(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))':
+    dependencies:
+      eventemitter3: 5.0.1
+      mipd: 0.0.7(typescript@5.9.3)
+      viem: 2.47.1(typescript@5.9.3)(zod@3.25.76)
       zustand: 5.0.0(react@19.2.4)
     optionalDependencies:
       typescript: 5.9.3
@@ -9240,54 +9632,6 @@ snapshots:
       pinata: 2.5.5(react@19.2.4)
       solc: 0.8.34
       viem: 2.46.3(typescript@5.9.3)(zod@3.24.3)
-    transitivePeerDependencies:
-      - '@bufbuild/protobuf'
-      - '@grpc/grpc-js'
-      - '@sinclair/typebox'
-      - '@tanstack/query-core'
-      - '@types/react'
-      - arktype
-      - bufferutil
-      - debug
-      - encoding
-      - express
-      - graphql
-      - immer
-      - openapi-types
-      - react
-      - react-dom
-      - react-native
-      - supports-color
-      - tslib
-      - typescript
-      - use-sync-external-store
-      - utf-8-validate
-      - valibot
-      - zod
-
-  fangorn-sdk@2026.2.2-7.0(@sinclair/typebox@0.34.48)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))(zod@3.25.76):
-    dependencies:
-      '@a2a-js/sdk': 0.3.11(express@5.2.1)
-      '@clack/prompts': 1.1.0
-      '@lit-protocol/access-control-conditions': 8.0.2(typescript@5.9.3)
-      '@lit-protocol/auth': 8.2.3(@sinclair/typebox@0.34.48)(encoding@0.1.13)(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))
-      '@lit-protocol/auth-helpers': 8.2.1(react@19.2.4)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))
-      '@lit-protocol/lit-client': 8.3.1(@sinclair/typebox@0.34.48)(encoding@0.1.13)(react@19.2.4)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))
-      '@lit-protocol/networks': 8.4.1(@sinclair/typebox@0.34.48)(react@19.2.4)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))
-      '@rolldown/binding-linux-x64-gnu': 1.0.0-beta.59
-      '@x402/core': 2.6.0
-      '@x402/evm': 2.6.0(ethers@6.16.0)(typescript@5.9.3)
-      agent0-sdk: 1.6.0(encoding@0.1.13)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(typescript@5.9.3)(zod@3.25.76)
-      buffer: 6.0.3
-      commander: 14.0.3
-      dotenv: 17.3.1
-      ethers: 6.16.0
-      imurmurhash: 0.1.4
-      multiformats: 13.4.2
-      node-localstorage: 3.0.5
-      pinata: 2.5.5(react@19.2.4)
-      solc: 0.8.34
-      viem: 2.46.3(typescript@5.9.3)(zod@3.25.76)
     transitivePeerDependencies:
       - '@bufbuild/protobuf'
       - '@grpc/grpc-js'
@@ -10828,14 +11172,44 @@ snapshots:
     transitivePeerDependencies:
       - zod
 
+  ox@0.14.0(typescript@5.9.3)(zod@3.24.3):
+    dependencies:
+      '@adraffy/ens-normalize': 1.11.1
+      '@noble/ciphers': 1.3.0
+      '@noble/curves': 1.9.1
+      '@noble/hashes': 1.8.0
+      '@scure/bip32': 1.7.0
+      '@scure/bip39': 1.6.0
+      abitype: 1.2.3(typescript@5.9.3)(zod@3.24.3)
+      eventemitter3: 5.0.1
+    optionalDependencies:
+      typescript: 5.9.3
+    transitivePeerDependencies:
+      - zod
+
+  ox@0.14.0(typescript@5.9.3)(zod@3.25.76):
+    dependencies:
+      '@adraffy/ens-normalize': 1.11.1
+      '@noble/ciphers': 1.3.0
+      '@noble/curves': 1.9.1
+      '@noble/hashes': 1.8.0
+      '@scure/bip32': 1.7.0
+      '@scure/bip39': 1.6.0
+      abitype: 1.2.3(typescript@5.9.3)(zod@3.25.76)
+      eventemitter3: 5.0.1
+    optionalDependencies:
+      typescript: 5.9.3
+    transitivePeerDependencies:
+      - zod
+
   ox@0.6.9(typescript@5.9.3)(zod@3.24.3):
     dependencies:
       '@adraffy/ens-normalize': 1.11.1
-      '@noble/curves': 1.8.2
-      '@noble/hashes': 1.7.2
-      '@scure/bip32': 1.6.2
-      '@scure/bip39': 1.5.4
-      abitype: 1.0.8(typescript@5.9.3)(zod@3.24.3)
+      '@noble/curves': 1.9.7
+      '@noble/hashes': 1.8.0
+      '@scure/bip32': 1.7.0
+      '@scure/bip39': 1.6.0
+      abitype: 1.2.3(typescript@5.9.3)(zod@3.24.3)
       eventemitter3: 5.0.1
     optionalDependencies:
       typescript: 5.9.3
@@ -10850,7 +11224,7 @@ snapshots:
       '@noble/hashes': 1.8.0
       '@scure/bip32': 1.7.0
       '@scure/bip39': 1.6.0
-      abitype: 1.1.0(typescript@5.9.3)(zod@3.24.3)
+      abitype: 1.2.3(typescript@5.9.3)(zod@3.24.3)
       eventemitter3: 5.0.1
     optionalDependencies:
       typescript: 5.9.3
@@ -12010,6 +12384,40 @@ snapshots:
       abitype: 1.2.3(typescript@5.9.3)(zod@3.25.76)
       isows: 1.0.7(ws@8.18.3)
       ox: 0.12.4(typescript@5.9.3)(zod@3.25.76)
+      ws: 8.18.3
+    optionalDependencies:
+      typescript: 5.9.3
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+      - zod
+
+  viem@2.47.1(typescript@5.9.3)(zod@3.24.3):
+    dependencies:
+      '@noble/curves': 1.9.1
+      '@noble/hashes': 1.8.0
+      '@scure/bip32': 1.7.0
+      '@scure/bip39': 1.6.0
+      abitype: 1.2.3(typescript@5.9.3)(zod@3.24.3)
+      isows: 1.0.7(ws@8.18.3)
+      ox: 0.14.0(typescript@5.9.3)(zod@3.24.3)
+      ws: 8.18.3
+    optionalDependencies:
+      typescript: 5.9.3
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+      - zod
+
+  viem@2.47.1(typescript@5.9.3)(zod@3.25.76):
+    dependencies:
+      '@noble/curves': 1.9.1
+      '@noble/hashes': 1.8.0
+      '@scure/bip32': 1.7.0
+      '@scure/bip39': 1.6.0
+      abitype: 1.2.3(typescript@5.9.3)(zod@3.25.76)
+      isows: 1.0.7(ws@8.18.3)
+      ox: 0.14.0(typescript@5.9.3)(zod@3.25.76)
       ws: 8.18.3
     optionalDependencies:
       typescript: 5.9.3
