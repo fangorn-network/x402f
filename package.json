@@ -14,17 +14,19 @@
     "facilitator": "npx tsx --env-file=./packages/facilitator/.env packages/facilitator/src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsdown",
-    "publish:all": "pnpm --filter './packages/*' publish --access public"
+    "publish:all": "pnpm --filter './packages/*' publish --access public",
+    "lint": "eslint ."
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "dependencies": {},
   "devDependencies": {
     "@types/node": "^25.1.0",
+    "eslint": "^10.0.3",
     "tsdown": "0.16.8",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.57.0"
   },
   "directories": {
     "example": "examples"
