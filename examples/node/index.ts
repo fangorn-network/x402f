@@ -1,8 +1,8 @@
 import { createWalletClient, http, type Hex } from "viem";
 import { Address, privateKeyToAccount } from "viem/accounts";
 import { atob } from "node:buffer";
-import { createFangornMiddleware } from "@x402f/fetch";
-import { FangornConfig } from "@fangorn-network/sdk";
+import { createFangornMiddleware } from "../../packages/fetch/src/middleware.js";
+import { FangornConfig, computeSchemaId } from "@fangorn-network/sdk";
 
 
 const getEnv = (key: string): string => {
@@ -40,12 +40,12 @@ async function nodeExample() {
     );
 
     const owner = "0x147c24c5Ea2f1EE1ac42AD16820De23bBba45Ef6" as Address;
-    const datasourceName = "fangorn";
+    const schemaName = "fangorn.test.v1";
     const tag = "helloFangorn.txt";
 
     const result = await middleware.fetchResource({
         owner,
-        datasourceName,
+        schemaId: computeSchemaId(schemaName),
         tag,
         baseUrl: resourceServerUrl,
     });
