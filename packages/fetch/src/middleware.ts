@@ -43,11 +43,11 @@ export interface FangornMiddlewareConfig {
 
 export interface FetchResourceOptions {
     owner: Address,
-    datasourceName: string;
+    schemaId: Hex;
     tag: string;
     baseUrl?: string;
     endpoint?: string;
-    authToken?: string; 
+    authToken?: string;
 }
 
 export interface FetchResourceResult {
@@ -80,7 +80,7 @@ export class FangornX402Middleware {
 
         const storageAdapter = new PinataStorage(pinataJwt, pinataGateway);
 
-        this.fangorn = await Fangorn.init(this.walletClient, storageAdapter, encryptionService, domain, config);
+        this.fangorn = await Fangorn.init(this.walletClient as any, storageAdapter, encryptionService, domain, config);
 
         this.fetchWithPayment = wrapFetchWithPaymentFromConfig(globalThis.fetch.bind(globalThis), {
             schemes: [{
@@ -107,23 +107,24 @@ export class FangornX402Middleware {
 
         const {
             owner,
-            datasourceName,
+            schemaId,
             tag,
-            baseUrl = "http://1.2.3.4:4021",
+            baseUrl = "http://127.0.0.1:4021",
             endpoint = "/",
             authToken,
         } = options;
 
         try {
-            const params = new URLSearchParams({ owner, name: datasourceName, tag });
-            console.log(`${baseUrl}${endpoint}?${params.toString()}`,);
+            const params = new URLSearchParams({ owner, schemaId, tag });
+            console.log(`${baseUrl}${endpoint}?${params.toString()}`);
+
             const response = await this.fetchWithPayment(
                 `${baseUrl}${endpoint}?${params.toString()}`,
                 {
                     method: "GET",
-                    headers: { 
+                    headers: {
                         "Accept": "application/json",
-                        "Authorization": `Bearer ${authToken}`,
+                        ...(authToken ? { "Authorization": `Bearer ${authToken}` } : {}),
                     },
                 }
             );
@@ -137,7 +138,7 @@ export class FangornX402Middleware {
             }
 
             if (response.ok) {
-                const decryptedData = await this.fangorn.decryptFile(owner, datasourceName, tag);
+                const decryptedData = await this.fangorn.decryptFile(owner, schemaId, tag);
                 const dataString = new TextDecoder().decode(decryptedData);
                 return {
                     success: true,

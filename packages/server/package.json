@@ -22,15 +22,15 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@x402/core": "^2.5.0",
-    "@x402/evm": "^2.5.0",
-    "@x402/express": "^2.5.0",
-    "cors": "^2.8.6",
-    "express": "^5.2.1",
-    "@fangorn-network/sdk": "2026.3.11",
-    "google-auth-library": "^10.6.1",
-    "pinata": "^2.5.5",
-    "viem": "^2.46.3"
+    "@x402/core": "catalog:",
+    "@x402/evm": "catalog:",
+    "@x402/express": "catalog:",
+    "cors": "catalog:",
+    "express": "catalog:",
+    "@fangorn-network/sdk": "file:../../../fangorn",
+    "google-auth-library": "catalog:",
+    "pinata": "catalog:",
+    "viem": "catalog:"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
