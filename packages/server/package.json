@@ -1,6 +1,6 @@
 {
   "name": "@x402f/server",
-  "version": "2026.03.10",
+  "version": "2026.03.12",
   "description": "",
   "type": "module",
   "main": "./dist/index.js",
