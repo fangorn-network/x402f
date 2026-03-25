@@ -18,21 +18,15 @@ const config = envChain == "arbitrumSepolia" ? FangornConfig.ArbitrumSepolia : F
 
 async function nodeExample() {
 
-    const account = privateKeyToAccount(getEnv("EVM_PRIVATE_KEY") as Hex);
+    const privateKey = getEnv("EVM_PRIVATE_KEY") as Hex;
     const resourceServerUrl = getEnv("RESOURCE_SERVER_URL");
     const pinataJwt = getEnv("PINATA_JWT");
     const pinataGateway = getEnv("PINATA_GATEWAY");
 
     const domain = "localhost:3000";
 
-    const walletClient = createWalletClient({
-        account,
-        chain: config.chain,
-        transport: http(config.rpcUrl),
-    });
-
     const middleware = await createFangornMiddleware(
-        walletClient,
+        privateKey,
         config,
         domain,
         pinataJwt,
@@ -40,18 +34,17 @@ async function nodeExample() {
     );
 
     const owner = "0x147c24c5Ea2f1EE1ac42AD16820De23bBba45Ef6" as Address;
-    const schemaName = "test.fangorn.music.v1";
-    const tag = "demo.mp3";
+    const schemaName = "noagent-fangorn.test.music.v0";
+    const tag = "track-003";
 
     const result = await middleware.fetchResource({
         owner,
-        schemaId: computeSchemaId(schemaName),
+        schemaName,
         tag,
         baseUrl: resourceServerUrl,
     });
 
     if (result.success) {
-        // console.log("Decrypted result:", atob((result as any).dataString));
         console.log("Decrypted result:", JSON.stringify(result));
         process.exit(0)
     } else {

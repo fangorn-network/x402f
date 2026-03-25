@@ -65,7 +65,10 @@ importers:
     dependencies:
       '@fangorn-network/sdk':
         specifier: file:../../../fangorn
-        version: file:../fangorn(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.25.76)
+        version: file:../fangorn(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.24.3)
+      '@semaphore-protocol/identity':
+        specifier: ^4.14.2
+        version: 4.14.2
       '@x402/core':
         specifier: 'catalog:'
         version: 2.6.0
@@ -80,7 +83,7 @@ importers:
         version: 5.2.1
       viem:
         specifier: 'catalog:'
-        version: 2.47.1(typescript@5.9.3)(zod@3.25.76)
+        version: 2.47.1(typescript@5.9.3)(zod@3.24.3)
     devDependencies:
       '@types/cors':
         specifier: ^2.8.19
@@ -93,7 +96,7 @@ importers:
     dependencies:
       '@fangorn-network/sdk':
         specifier: file:../../../fangorn
-        version: file:../fangorn(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.24.3)
+        version: file:../fangorn(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.25.76)
       '@semaphore-protocol/identity':
         specifier: ^4.14.2
         version: 4.14.2
@@ -112,7 +115,7 @@ importers:
         version: 0.21.1(synckit@0.11.12)(typescript@5.9.3)
       viem:
         specifier: 2.47.1
-        version: 2.47.1(typescript@5.9.3)(zod@3.24.3)
+        version: 2.47.1(typescript@5.9.3)(zod@3.25.76)
 
   packages/server:
     dependencies:

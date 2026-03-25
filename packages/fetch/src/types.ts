@@ -8,8 +8,9 @@ export interface X402FExtra {
     resourceId: Hex;
     // bigint as string
     identityCommitment: string;
+    identitySecret: Hex;
     stealthAddress: Address;
-    preparedSettle: PrepareSettleResult;
+    // preparedSettle: PrepareSettleResult;
     // from: buyer, to: facilitator
     clientPayment: TransferWithAuthPayload;
 }
@@ -23,7 +24,7 @@ export interface FangornMiddlewareConfig {
 
 export interface FetchResourceOptions {
     owner: Address,
-    schemaId: Hex;
+    schemaName: string;
     tag: string;
     baseUrl?: string;
     endpoint?: string;

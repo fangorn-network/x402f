@@ -90,13 +90,18 @@ export class FangornX402Middleware {
 
         // Derive identity + stealth key once — stable across sessions
         const identity = new Identity(privateKey);
+        console.log('created identity')
         const stealthKey = keccak256(
             encodePacked(
                 ["string", "bytes32"],
-                ["fangorn:stealth:", toHex(identity.secretScalar)],
+                ["fangorn:stealth:", toHex(identity.secretScalar, { size: 32 })],
             )
         ) as Hex;
+
+        console.log('created stealth key ' + stealthKey)
         const stealthAddress = privateKeyToAccount(stealthKey).address;
+
+        console.log('stealth address ' + stealthAddress)
 
         return new FangornX402Middleware(
             fangorn,
@@ -110,16 +115,15 @@ export class FangornX402Middleware {
     }
 
     async fetchResource(options: FetchResourceOptions): Promise<FetchResourceResult> {
-
-        // TODO
         const field = "audio";
-        const facilitatorAddress = "0x" as Address;
-        const usdcContractAddress = "" as Address;
-        const usdcDomainName = "USD Coin;"
+        const facilitatorUrl = "http://127.0.0.1:30333";
+        const usdcContractAddress = "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d" as Address;
+        const usdcDomainName = "USD Coin";
+        const facilitatorAddress = "0x147c24c5Ea2f1EE1ac42AD16820De23bBba45Ef6" as Address;
 
         const {
             owner,
-            schemaId,
+            schemaName,
             tag,
             baseUrl = "http://127.0.0.1:4021",
             endpoint = "/",
@@ -127,68 +131,103 @@ export class FangornX402Middleware {
         } = options;
 
         try {
+            // 1. resolve schema
+            let schemaId: Hex;
+            try {
+                schemaId = await this.fangorn.getSchemaRegistry().schemaId(schemaName);
+            } catch {
+                throw new Error(`Schema "${schemaName}" not found on-chain.`);
+            }
+
             const resourceId = SettlementRegistry.deriveResourceId(owner, schemaId, tag);
             const price = await this.fangorn.getSettlementRegistry().getPrice(resourceId);
+            console.log("price:", price, "resourceId:", resourceId);
 
+            // 2. client pays facilitator → register (commitment lands in group)
             const clientPayment = await this.fangorn.consumer.prepareRegister({
-                burnerPrivateKey: this.stealthKey,
+                // burnerPrivateKey: this.stealthKey,
+                // TODO
+                burnerPrivateKey: "0xde0e6c1c331fcd8692463d6ffcf20f9f2e1847264f7a3f578cf54f62f05196cb",
                 paymentRecipient: facilitatorAddress,
                 amount: price,
                 usdcAddress: usdcContractAddress,
-                usdcDomainName: usdcDomainName,
+                usdcDomainName,
                 usdcDomainVersion: "2",
             });
 
+            const verifyRes = await fetch(`${facilitatorUrl}/verify`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    paymentPayload: {
+                        x402Version: 2,
+                    },
+                    paymentRequirements: {
+                        scheme: "exact",
+                        network: `eip155:${this.config.caip2}`,
+                        amount: price.toString(),
+                        asset: usdcContractAddress,
+                        payTo: facilitatorAddress,
+                        extra: {
+                            name: usdcDomainName,
+                            version: "2",
+                            resourceId,
+                            clientPayment,
+                            identityCommitment: this.identity.commitment.toString(),
+                            stealthAddress: this.stealthAddress,
+                        },
+                    },
+                }, (_, v) => typeof v === "bigint" ? v.toString() : v),
+            });
+
+            const verifyBody = await verifyRes.json();
+            console.log("verify result:", verifyBody);
+            if (!verifyBody.isValid) {
+                return { success: false, error: `Verify failed: ${verifyBody.invalidReason}` };
+            }
+
+            // 3. commitment is in the group — build proof
             const preparedSettle = await this.fangorn.consumer.prepareSettle({
                 resourceId,
                 identity: this.identity,
                 stealthAddress: this.stealthAddress,
             });
+            console.log("proof built");
 
-            const extra: X402FExtra = {
-                name: usdcDomainName,
-                version: "2",
-                resourceId,
-                identityCommitment: this.identity.commitment.toString(),
-                stealthAddress: this.stealthAddress,
-                preparedSettle,
-                clientPayment,
-            };
-
-            const params = new URLSearchParams({ owner, schemaId, tag });
-            const response = await this.fetchWithPayment(
-                `${baseUrl}${endpoint}?${params.toString()}`,
-                {
-                    method: "GET",
-                    headers: {
-                        "Accept": "application/json",
-                        "x402-extra": JSON.stringify(extra),
-                        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+            // 4. settle
+            const settleRes = await fetch(`${facilitatorUrl}/settle`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    paymentPayload: {
+                        x402Version: 2,
                     },
-                },
-            );
+                    paymentRequirements: {
+                        scheme: "exact",
+                        network: `eip155:${this.config.caip2}`,
+                        amount: price.toString(),
+                        asset: usdcContractAddress,
+                        payTo: facilitatorAddress,
+                        extra: {
+                            name: usdcDomainName,
+                            version: "2",
+                            resourceId,
+                            preparedSettle,
+                            stealthAddress: this.stealthAddress,
+                        },
+                    },
+                }, (_, v) => typeof v === "bigint" ? v.toString() : v),
+            });
 
-            if (!response.ok) {
-                return { success: false, error: `Request failed: ${response.status}` };
+            const settleBody = await settleRes.json();
+            console.log("settle result:", settleBody);
+            if (!settleBody.success) {
+                return { success: false, error: `Settle failed: ${settleBody.errorReason}` };
             }
 
-            const body = await response.json() as {
-                success: boolean;
-                report: {
-                    owner: Address;
-                    schemaId: Hex;
-                    tag: string;
-                    entry: unknown;
-                    nullifierHash: string;
-                };
-            };
+            const nullifierHash = BigInt(settleBody.extensions.nullifier);
 
-            if (!body.success || !body.report.nullifierHash) {
-                return { success: false, error: "Missing nullifierHash in response" };
-            }
-
-            const nullifierHash = BigInt(body.report.nullifierHash);
-
+            // 5. decrypt
             const stealthWalletClient = createWalletClient({
                 account: privateKeyToAccount(this.stealthKey),
                 chain: this.config.chain,
@@ -219,7 +258,6 @@ export class FangornX402Middleware {
             };
         }
     }
-
     getAddress(): Hex {
         return this.walletClient.account!.address;
     }

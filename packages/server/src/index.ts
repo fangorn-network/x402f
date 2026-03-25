@@ -5,7 +5,7 @@ import { x402ResourceServer, HTTPFacilitatorClient } from "@x402/core/server";
 import type { HTTPRequestContext } from "@x402/core/server";
 import { createWalletClient, http } from "viem";
 import { Address, privateKeyToAccount } from "viem/accounts";
-import { Fangorn, FangornConfig, LitEncryptionService, PinataStorage } from "@fangorn-network/sdk";
+import { Fangorn, FangornConfig } from "@fangorn-network/sdk";
 import { FangornEvmScheme } from "./FangornEvmScheme.js";
 import { GoogleAuth } from 'google-auth-library';
 import { Hex } from "viem";
@@ -87,12 +87,6 @@ const agentCard = {
 	},
 };
 
-const delegatorWalletClient = createWalletClient({
-	account,
-	transport: http(config.rpcUrl),
-	chain: config.chain,
-});
-
 const server = new x402ResourceServer(facilitatorClient);
 server.register("eip155:*", new FangornEvmScheme());
 
@@ -130,6 +124,17 @@ function resolveEntryParams(context: HTTPRequestContext): {
 	return { owner, schemaId, tag };
 }
 
+// Merge x402-extra from client request into the price callback context
+app.use((req: any, _res, next) => {
+	const raw = req.headers["x402-extra"];
+	if (raw) {
+		try {
+			req.x402Extra = JSON.parse(Array.isArray(raw) ? raw[0] : raw);
+		} catch { /* ignore malformed */ }
+	}
+	next();
+});
+
 app.use(
 	paymentMiddleware(
 		{
@@ -140,28 +145,29 @@ app.use(
 					{
 						scheme: "exact",
 						network: `eip155:${config.caip2}`,
-
 						price: async (context: HTTPRequestContext) => {
 							const { owner, schemaId, tag } = resolveEntryParams(context);
 							const resourceId = SettlementRegistry.deriveResourceId(owner, schemaId, tag);
 							const price = await fangorn.getSettlementRegistry().getPrice(resourceId);
-							const amount = price.toString();
+
+							// Pull client-supplied extra (clientPayment, identityCommitment,
+							// preparedSettle etc.) from the stashed header and merge in
+							const clientExtra = (context.adapter as any).req?.x402Extra ?? {};
 
 							return {
-								amount,
+								amount: price.toString(),
 								asset: usdcContractAddress,
 								extra: {
 									name: usdcDomainName,
 									version: "2",
-									commitment: resourceId,
+									resourceId,
+									...clientExtra,
 								},
 							};
 						},
-						payTo: async (context: HTTPRequestContext) => {
-							// payTo is the address that receives payment — always the resource server's account
+						payTo: async (_context: HTTPRequestContext) => {
 							return account.address;
 						},
-
 						maxTimeoutSeconds: 300,
 					},
 				],
@@ -170,6 +176,47 @@ app.use(
 		server,
 	),
 );
+
+// app.use(
+// 	paymentMiddleware(
+// 		{
+// 			"GET /": {
+// 				description: "Read Fangorn encrypted data",
+// 				mimeType: "application/json",
+// 				accepts: [
+// 					{
+// 						scheme: "exact",
+// 						network: `eip155:${config.caip2}`,
+
+// 						price: async (context: HTTPRequestContext) => {
+// 							const { owner, schemaId, tag } = resolveEntryParams(context);
+// 							const resourceId = SettlementRegistry.deriveResourceId(owner, schemaId, tag);
+// 							const price = await fangorn.getSettlementRegistry().getPrice(resourceId);
+// 							const amount = price.toString();
+
+// 							return {
+// 								amount,
+// 								asset: usdcContractAddress,
+// 								extra: {
+// 									name: usdcDomainName,
+// 									version: "2",
+// 									resourceId: resourceId,
+// 								},
+// 							};
+// 						},
+// 						payTo: async (context: HTTPRequestContext) => {
+// 							// TODO: This needs to be the facilitator's address
+// 							return account.address;
+// 						},
+
+// 						maxTimeoutSeconds: 300,
+// 					},
+// 				],
+// 			},
+// 		},
+// 		server,
+// 	),
+// );
 
 // GET '/' - returns a 200 when conditions are verified (e.g. payment settled)
 app.get("/", async (req, res: any) => {

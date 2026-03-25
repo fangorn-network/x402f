@@ -1,0 +1,11 @@
+{
+    "tag": "track-03",
+    "fields": {
+        "title": "Track Three",
+        "artist": "Alice",
+        "audio": {
+            "data": [1, 2, 3, 4, 5], 
+            "fileType": "audio/mp3"
+        }
+    }
+}

@@ -1,0 +1,5 @@
+{
+    "title": { "@type": "string" },
+    "artist": { "@type": "string" },
+    "audio": { "@type": "encrypted", "gadget": "settled" }
+}
