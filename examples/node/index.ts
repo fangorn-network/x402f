@@ -40,8 +40,8 @@ async function nodeExample() {
     );
 
     const owner = "0x147c24c5Ea2f1EE1ac42AD16820De23bBba45Ef6" as Address;
-    const schemaName = "fangorn.test.v1";
-    const tag = "helloFangorn.txt";
+    const schemaName = "test.fangorn.music.v1";
+    const tag = "demo.mp3";
 
     const result = await middleware.fetchResource({
         owner,
@@ -51,7 +51,8 @@ async function nodeExample() {
     });
 
     if (result.success) {
-        console.log("Decrypted result:", atob((result as any).dataString));
+        // console.log("Decrypted result:", atob((result as any).dataString));
+        console.log("Decrypted result:", JSON.stringify(result));
         process.exit(0)
     } else {
         console.error("Failed:", result.error);

@@ -5,10 +5,11 @@ import { x402ResourceServer, HTTPFacilitatorClient } from "@x402/core/server";
 import type { HTTPRequestContext } from "@x402/core/server";
 import { createWalletClient, http } from "viem";
 import { Address, privateKeyToAccount } from "viem/accounts";
-import { computeTagCommitment, Fangorn, FangornConfig, LitEncryptionService, PinataStorage } from "@fangorn-network/sdk";
+import { Fangorn, FangornConfig, LitEncryptionService, PinataStorage } from "@fangorn-network/sdk";
 import { FangornEvmScheme } from "./FangornEvmScheme.js";
 import { GoogleAuth } from 'google-auth-library';
 import { Hex } from "viem";
+import { SettlementRegistry } from '@fangorn-network/sdk/lib/registries/settlement-registry/index.js';
 
 const getEnv = (key: string): string => {
 	const value = process.env[key];
@@ -22,7 +23,8 @@ const port = parseInt(process.env.SERVER_PORT!) || 0;
 const jwt = getEnv("PINATA_JWT");
 const gateway = getEnv("PINATA_GATEWAY");
 const usdcContractAddress = getEnv("USDC_CONTRACT_ADDR");
-const account = privateKeyToAccount(getEnv("EVM_PRIVATE_KEY") as `0x${string}`);
+const privateKey = getEnv("EVM_PRIVATE_KEY") as `0x${string}`;
+const account = privateKeyToAccount(privateKey);
 const gcpAuth = getEnv("GCP_AUTH");
 
 console.log(`facilitatorUrl=${facilitatorUrl}`);
@@ -94,17 +96,19 @@ const delegatorWalletClient = createWalletClient({
 const server = new x402ResourceServer(facilitatorClient);
 server.register("eip155:*", new FangornEvmScheme());
 
-const encryptionService = await LitEncryptionService.init(config.chainName);
-const domain = process.env.RESOURCE_SERVER_DOMAIN || `localhost:${port}`;
-const storage = new PinataStorage(jwt, gateway);
+// const encryptionService = await LitEncryptionService.init(config.chainName);
+// const domain = process.env.RESOURCE_SERVER_DOMAIN || `localhost:${port}`;
+// const storage = new PinataStorage(jwt, gateway);
 
-const fangorn = await Fangorn.init(
-	delegatorWalletClient,
-	storage,
-	encryptionService,
-	domain,
+const fangorn = await Fangorn.create({
+	privateKey,
+	storage: {
+		pinata: { jwt, gateway }
+	},
+	encryption: { lit: true },
 	config,
-);
+	domain: "localhost"
+});
 
 const resolveParam = (val: string | string[] | undefined): string =>
 	(Array.isArray(val) ? val[0] : val ?? "").trim();
@@ -139,10 +143,9 @@ app.use(
 
 						price: async (context: HTTPRequestContext) => {
 							const { owner, schemaId, tag } = resolveEntryParams(context);
-							const entry = await fangorn.getEntry(owner, schemaId, tag);
-							const price = entry.gadgetDescriptor.params!.price as string;
-							const commitment = await computeTagCommitment(owner, tag, price);
-							const amount = Math.round(parseFloat(price) * 1_000_000).toString();
+							const resourceId = SettlementRegistry.deriveResourceId(owner, schemaId, tag);
+							const price = await fangorn.getSettlementRegistry().getPrice(resourceId);
+							const amount = price.toString();
 
 							return {
 								amount,
@@ -150,11 +153,10 @@ app.use(
 								extra: {
 									name: usdcDomainName,
 									version: "2",
-									commitment: commitment.toString(),
+									commitment: resourceId,
 								},
 							};
 						},
-
 						payTo: async (context: HTTPRequestContext) => {
 							// payTo is the address that receives payment — always the resource server's account
 							return account.address;
@@ -171,14 +173,14 @@ app.use(
 
 // GET '/' - returns a 200 when conditions are verified (e.g. payment settled)
 app.get("/", async (req, res: any) => {
-  try {
-    res.send({
-      success: true,
-      report: {}
-    });
-  } catch (error: any) {
-    res.status(500).send({ error: error.message });
-  }
+	try {
+		res.send({
+			success: true,
+			report: {}
+		});
+	} catch (error: any) {
+		res.status(500).send({ error: error.message });
+	}
 });
 
 

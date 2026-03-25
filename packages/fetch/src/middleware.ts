@@ -1,13 +1,13 @@
-import { x402Client } from "@x402/core/client";
-import { createPublicClient, http, type Address, type Hex, type WalletClient } from "viem";
+import { createPublicClient, createWalletClient, encodePacked, http, keccak256, toHex, type Address, type Hex, type WalletClient } from "viem";
 import { ExactEvmScheme } from "@x402/evm/exact/client";
-import { AppConfig, Fangorn, LitEncryptionService, PinataStorage } from "@fangorn-network/sdk";
+import { type AppConfig, Fangorn } from "@fangorn-network/sdk";
 import { wrapFetchWithPaymentFromConfig } from "@x402/fetch";
-import { ClientEvmSigner } from "@x402/evm";
+import { type ClientEvmSigner } from "@x402/evm";
+import { SettlementRegistry } from "@fangorn-network/sdk/lib/registries/settlement-registry/index.js";
+import { privateKeyToAccount } from "viem/accounts";
+import { Identity } from "@semaphore-protocol/identity";
+import { type FetchResourceOptions, type FetchResourceResult, type X402FExtra } from "./types.js";
 
-/**
- * Wraps a viem WalletClient to satisfy x402's signer interface
- */
 function createSignerFromWallet(walletClient: WalletClient, config: AppConfig): ClientEvmSigner {
     const account = walletClient.account;
     if (!account) throw new Error("WalletClient must have an account attached");
@@ -20,7 +20,7 @@ function createSignerFromWallet(walletClient: WalletClient, config: AppConfig): 
     return {
         address: account.address,
         signTypedData: async (message) => walletClient.signTypedData({
-            account: walletClient.account!.type === 'local' ? account : account.address,
+            account: walletClient.account!.type === "local" ? account : account.address,
             domain: message.domain as any,
             types: message.types as any,
             primaryType: message.primaryType,
@@ -30,80 +30,92 @@ function createSignerFromWallet(walletClient: WalletClient, config: AppConfig): 
     };
 }
 
-/**
- * The configuration items for the x402f/fetch middleware
- * 
- */
-export interface FangornMiddlewareConfig {
-    pinataJwt: string;
-    pinataGateway: string;
-    appConfig: AppConfig;
-    domain?: string;
-}
-
-export interface FetchResourceOptions {
-    owner: Address,
-    schemaId: Hex;
-    tag: string;
-    baseUrl?: string;
-    endpoint?: string;
-    authToken?: string;
-}
-
-export interface FetchResourceResult {
-    success: boolean;
-    data?: Uint8Array;
-    dataString?: string;
-    alreadyPaid?: boolean;
-    paymentResponse?: unknown;
-    error?: string;
-}
-
 export class FangornX402Middleware {
-    private fangorn!: Fangorn;
-    private x402Client!: x402Client;
-    private fetchWithPayment!: typeof fetch;
-    private walletClient: WalletClient;
-    private initialized = false;
+    private readonly fangorn: Fangorn;
+    private readonly fetchWithPayment: typeof fetch;
+    private readonly walletClient: WalletClient;
+    private readonly identity: Identity;
+    private readonly stealthKey: Hex;
+    private readonly stealthAddress: Address;
+    private readonly config: AppConfig;
 
-    constructor(walletClient: WalletClient) {
-        if (!walletClient.account) {
-            throw new Error("WalletClient must have an account attached");
-        }
+    private constructor(
+        fangorn: Fangorn,
+        fetchWithPayment: typeof fetch,
+        walletClient: WalletClient,
+        identity: Identity,
+        stealthKey: Hex,
+        stealthAddress: Address,
+        config: AppConfig,
+    ) {
+        this.fangorn = fangorn;
+        this.fetchWithPayment = fetchWithPayment;
         this.walletClient = walletClient;
+        this.identity = identity;
+        this.stealthKey = stealthKey;
+        this.stealthAddress = stealthAddress;
+        this.config = config;
     }
 
-    async init(config: AppConfig, domain: string, pinataJwt: string, pinataGateway: string): Promise<this> {
-        if (this.initialized) return this;
-
-        const encryptionService = await LitEncryptionService.init(config.chainName);
-
-        const storageAdapter = new PinataStorage(pinataJwt, pinataGateway);
-
-        this.fangorn = await Fangorn.init(this.walletClient as any, storageAdapter, encryptionService, domain, config);
-
-        this.fetchWithPayment = wrapFetchWithPaymentFromConfig(globalThis.fetch.bind(globalThis), {
-            schemes: [{
-                network: `eip155:${config.caip2}`,
-                client: new ExactEvmScheme(createSignerFromWallet(this.walletClient, config)),
-            }],
+    static async create(
+        privateKey: Hex,
+        config: AppConfig,
+        domain: string,
+        pinataJwt: string,
+        pinataGateway: string,
+    ): Promise<FangornX402Middleware> {
+        const walletClient = createWalletClient({
+            account: privateKeyToAccount(privateKey),
+            chain: config.chain,
+            transport: http(config.rpcUrl),
         });
 
-        this.initialized = true;
-        return this;
+        const fangorn = await Fangorn.create({
+            privateKey,
+            storage: { pinata: { jwt: pinataJwt, gateway: pinataGateway } },
+            encryption: { lit: true },
+            config,
+            domain,
+        });
+
+        const fetchWithPayment = wrapFetchWithPaymentFromConfig(
+            globalThis.fetch.bind(globalThis),
+            {
+                schemes: [{
+                    network: `eip155:${config.caip2}`,
+                    client: new ExactEvmScheme(createSignerFromWallet(walletClient, config)),
+                }],
+            },
+        );
+
+        // Derive identity + stealth key once — stable across sessions
+        const identity = new Identity(privateKey);
+        const stealthKey = keccak256(
+            encodePacked(
+                ["string", "bytes32"],
+                ["fangorn:stealth:", toHex(identity.secretScalar)],
+            )
+        ) as Hex;
+        const stealthAddress = privateKeyToAccount(stealthKey).address;
+
+        return new FangornX402Middleware(
+            fangorn,
+            fetchWithPayment,
+            walletClient,
+            identity,
+            stealthKey,
+            stealthAddress,
+            config,
+        );
     }
 
-    private ensureInitialized(): void {
-        if (!this.initialized) {
-            throw new Error("FangornX402Middleware not initialized. Call init() first.");
-        }
-    }
-
-    /**
-     * Fetch and decrypt a resource, handling x402 payment flow automatically
-     */
     async fetchResource(options: FetchResourceOptions): Promise<FetchResourceResult> {
-        this.ensureInitialized();
+
+        // TODO
+        const field = "audio";
+        const facilitatorAddress = "0x" as Address;
+        const usdcContractAddress = "" as Address;
+        const usdcDomainName = "USD Coin;"
 
         const {
             owner,
@@ -115,42 +127,91 @@ export class FangornX402Middleware {
         } = options;
 
         try {
-            const params = new URLSearchParams({ owner, schemaId, tag });
-            console.log(`${baseUrl}${endpoint}?${params.toString()}`);
+            const resourceId = SettlementRegistry.deriveResourceId(owner, schemaId, tag);
+            const price = await this.fangorn.getSettlementRegistry().getPrice(resourceId);
 
+            const clientPayment = await this.fangorn.consumer.prepareRegister({
+                burnerPrivateKey: this.stealthKey,
+                paymentRecipient: facilitatorAddress,
+                amount: price,
+                usdcAddress: usdcContractAddress,
+                usdcDomainName: usdcDomainName,
+                usdcDomainVersion: "2",
+            });
+
+            const preparedSettle = await this.fangorn.consumer.prepareSettle({
+                resourceId,
+                identity: this.identity,
+                stealthAddress: this.stealthAddress,
+            });
+
+            const extra: X402FExtra = {
+                name: usdcDomainName,
+                version: "2",
+                resourceId,
+                identityCommitment: this.identity.commitment.toString(),
+                stealthAddress: this.stealthAddress,
+                preparedSettle,
+                clientPayment,
+            };
+
+            const params = new URLSearchParams({ owner, schemaId, tag });
             const response = await this.fetchWithPayment(
                 `${baseUrl}${endpoint}?${params.toString()}`,
                 {
                     method: "GET",
                     headers: {
                         "Accept": "application/json",
-                        ...(authToken ? { "Authorization": `Bearer ${authToken}` } : {}),
+                        "x402-extra": JSON.stringify(extra),
+                        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
                     },
-                }
+                },
             );
 
-            if (response.status === 402) {
-                return {
-                    success: false,
-                    error: "Payment required but not processed",
-                    alreadyPaid: false,
-                };
+            if (!response.ok) {
+                return { success: false, error: `Request failed: ${response.status}` };
             }
 
-            if (response.ok) {
-                const decryptedData = await this.fangorn.decryptFile(owner, schemaId, tag);
-                const dataString = new TextDecoder().decode(decryptedData);
-                return {
-                    success: true,
-                    data: decryptedData,
-                    dataString,
+            const body = await response.json() as {
+                success: boolean;
+                report: {
+                    owner: Address;
+                    schemaId: Hex;
+                    tag: string;
+                    entry: unknown;
+                    nullifierHash: string;
                 };
+            };
+
+            if (!body.success || !body.report.nullifierHash) {
+                return { success: false, error: "Missing nullifierHash in response" };
             }
+
+            const nullifierHash = BigInt(body.report.nullifierHash);
+
+            const stealthWalletClient = createWalletClient({
+                account: privateKeyToAccount(this.stealthKey),
+                chain: this.config.chain,
+                transport: http(this.config.rpcUrl),
+            });
+
+            const data = await this.fangorn.consumer.decrypt({
+                owner,
+                schemaId,
+                tag,
+                field,
+                walletClient: stealthWalletClient,
+                nullifierHash,
+                identity: this.identity,
+                skipSettlementCheck: true,
+            });
 
             return {
-                success: false,
-                error: `Unexpected response status: ${response.status}`,
+                success: true,
+                data,
+                dataString: new TextDecoder().decode(data),
             };
+
         } catch (error) {
             return {
                 success: false,
@@ -159,38 +220,21 @@ export class FangornX402Middleware {
         }
     }
 
-    /**
-     * Direct access to x402 client
-     */
-    getX402Client(): x402Client {
-        this.ensureInitialized();
-        return this.x402Client;
-    }
-
-    /**
-     * Get the payment-wrapped fetch function for custom requests
-     */
-    getPaymentFetch(): typeof fetch {
-        this.ensureInitialized();
-        return this.fetchWithPayment;
-    }
-
-    /**
-     * Get the connected wallet address
-     */
     getAddress(): Hex {
         return this.walletClient.account!.address;
+    }
+
+    getPaymentFetch(): typeof fetch {
+        return this.fetchWithPayment;
     }
 }
 
 export async function createFangornMiddleware(
-    walletClient: WalletClient,
+    privateKey: Hex,
     config: AppConfig,
     domain: string,
     jwt: string,
     gateway: string,
 ): Promise<FangornX402Middleware> {
-    const middleware = new FangornX402Middleware(walletClient);
-    await middleware.init(config, domain, jwt, gateway);
-    return middleware;
+    return FangornX402Middleware.create(privateKey, config, domain, jwt, gateway);
 }
