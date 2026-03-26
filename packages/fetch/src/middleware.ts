@@ -131,7 +131,7 @@ export class FangornX402Middleware {
         } = options;
 
         try {
-            // 1. resolve schema
+            // resolve schema
             let schemaId: Hex;
             try {
                 schemaId = await this.fangorn.getSchemaRegistry().schemaId(schemaName);
@@ -143,9 +143,8 @@ export class FangornX402Middleware {
             const price = await this.fangorn.getSettlementRegistry().getPrice(resourceId);
             console.log("price:", price, "resourceId:", resourceId);
 
-            // 2. client pays facilitator → register (commitment lands in group)
+            // the client pays the facilitator (prepares a signed transferWithAuthorization call)
             const clientPayment = await this.fangorn.consumer.prepareRegister({
-                // burnerPrivateKey: this.stealthKey,
                 // TODO
                 burnerPrivateKey: "0xde0e6c1c331fcd8692463d6ffcf20f9f2e1847264f7a3f578cf54f62f05196cb",
                 paymentRecipient: facilitatorAddress,
@@ -155,6 +154,7 @@ export class FangornX402Middleware {
                 usdcDomainVersion: "2",
             });
 
+            // get the response from the verify call directly and handle it
             const verifyRes = await fetch(`${facilitatorUrl}/verify`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -181,20 +181,19 @@ export class FangornX402Middleware {
             });
 
             const verifyBody = await verifyRes.json();
-            console.log("verify result:", verifyBody);
+
             if (!verifyBody.isValid) {
                 return { success: false, error: `Verify failed: ${verifyBody.invalidReason}` };
             }
 
-            // 3. commitment is in the group — build proof
+            // valid => isRegistered == true => prepare settle (builds semaphore proof)
             const preparedSettle = await this.fangorn.consumer.prepareSettle({
                 resourceId,
                 identity: this.identity,
                 stealthAddress: this.stealthAddress,
             });
-            console.log("proof built");
 
-            // 4. settle
+            // settle
             const settleRes = await fetch(`${facilitatorUrl}/settle`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -220,14 +219,14 @@ export class FangornX402Middleware {
             });
 
             const settleBody = await settleRes.json();
-            console.log("settle result:", settleBody);
+
             if (!settleBody.success) {
                 return { success: false, error: `Settle failed: ${settleBody.errorReason}` };
             }
 
             const nullifierHash = BigInt(settleBody.extensions.nullifier);
 
-            // 5. decrypt
+            // decrypt
             const stealthWalletClient = createWalletClient({
                 account: privateKeyToAccount(this.stealthKey),
                 chain: this.config.chain,

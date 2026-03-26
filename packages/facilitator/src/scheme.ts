@@ -62,12 +62,12 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
 
             const price = BigInt(requirements.amount);
 
-            // Step 1: facilitator funds fresh anonymous burner
+            // facilitator funds fresh anonymous burner
             const burnerKey = generatePrivateKey();
             const burnerAddress = privateKeyToAccount(burnerKey).address;
             await this.transferUsdc(burnerAddress, price);
 
-            // Step 2: burner prepares ERC-3009 → resource owner
+            // burner prepares ERC-3009 to resource owner
             const preparedRegister = await this.fangorn.getSettlementRegistry()
                 .prepareTransferWithAuth({
                     burnerPrivateKey: burnerKey,
@@ -78,7 +78,7 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
                     usdcDomainVersion: extra.version,
                 });
 
-            // Step 3: register — burner pays owner, commitment lands in group
+            // burner pays owner, identity registers in the appropriate semaphore group
             try {
                 await this.fangorn.getSettlementRegistry().register({
                     resourceId: extra.resourceId,
@@ -99,7 +99,7 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
             return { isValid: false, invalidReason: (e as Error).message };
         }
     }
-    
+
     async settle(
         payload: PaymentPayload,
         requirements: PaymentRequirements,
@@ -109,8 +109,8 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
 
             if (!extra?.preparedSettle) throw new Error("Missing preparedSettle");
             if (!extra?.resourceId) throw new Error("Missing resourceId");
-
-            // Client built the proof after round trip 1 confirmed — just submit it
+            
+            // claim membership in semaphore group 
             const { hash, nullifier } = await this.fangorn.getSettlementRegistry().settle({
                 relayerPrivateKey: this.privateKey,
                 preparedSettle: extra.preparedSettle,
