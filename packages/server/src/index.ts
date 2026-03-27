@@ -20,8 +20,8 @@ const getEnv = (key: string): string => {
 const facilitatorUrl = process.env.FACILITATOR_URL || '';
 const usdcDomainName = getEnv("USDC_DOMAIN_NAME");
 const port = parseInt(process.env.SERVER_PORT!) || 0;
-const jwt = getEnv("PINATA_JWT");
-const gateway = getEnv("PINATA_GATEWAY");
+// const jwt = getEnv("PINATA_JWT");
+// const gateway = getEnv("PINATA_GATEWAY");
 const usdcContractAddress = getEnv("USDC_CONTRACT_ADDR");
 const privateKey = getEnv("EVM_PRIVATE_KEY") as `0x${string}`;
 const account = privateKeyToAccount(privateKey);
@@ -96,9 +96,7 @@ server.register("eip155:*", new FangornEvmScheme());
 
 const fangorn = await Fangorn.create({
 	privateKey,
-	storage: {
-		pinata: { jwt, gateway }
-	},
+	storage: { storacha: { email: process.env.EMAIL } },
 	encryption: { lit: true },
 	config,
 	domain: "localhost"

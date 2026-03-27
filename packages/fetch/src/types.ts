@@ -1,19 +1,5 @@
 import { AppConfig } from "@fangorn-network/sdk";
-import { PrepareSettleResult, TransferWithAuthPayload } from "@fangorn-network/sdk/lib/registries/settlement-registry/types.js";
-import { Address, Hex } from "viem";
-
-export interface X402FExtra {
-    name: string;
-    version: string;
-    resourceId: Hex;
-    // bigint as string
-    identityCommitment: string;
-    identitySecret: Hex;
-    stealthAddress: Address;
-    // preparedSettle: PrepareSettleResult;
-    // from: buyer, to: facilitator
-    clientPayment: TransferWithAuthPayload;
-}
+import { Address } from "viem";
 
 export interface FangornMiddlewareConfig {
     pinataJwt: string;

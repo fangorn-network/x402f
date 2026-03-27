@@ -6,7 +6,7 @@ import { type ClientEvmSigner } from "@x402/evm";
 import { SettlementRegistry } from "@fangorn-network/sdk/lib/registries/settlement-registry/index.js";
 import { privateKeyToAccount } from "viem/accounts";
 import { Identity } from "@semaphore-protocol/identity";
-import { type FetchResourceOptions, type FetchResourceResult, type X402FExtra } from "./types.js";
+import { type FetchResourceOptions, type FetchResourceResult } from "./types.js";
 
 function createSignerFromWallet(walletClient: WalletClient, config: AppConfig): ClientEvmSigner {
     const account = walletClient.account;
@@ -61,8 +61,6 @@ export class FangornX402Middleware {
         privateKey: Hex,
         config: AppConfig,
         domain: string,
-        pinataJwt: string,
-        pinataGateway: string,
     ): Promise<FangornX402Middleware> {
         const walletClient = createWalletClient({
             account: privateKeyToAccount(privateKey),
@@ -70,9 +68,10 @@ export class FangornX402Middleware {
             transport: http(config.rpcUrl),
         });
 
+        // we only need to read from storage
         const fangorn = await Fangorn.create({
             privateKey,
-            storage: { pinata: { jwt: pinataJwt, gateway: pinataGateway } },
+            storage: { storacha: { readOnly: true } },
             encryption: { lit: true },
             config,
             domain,
@@ -91,6 +90,7 @@ export class FangornX402Middleware {
         // Derive identity + stealth key once — stable across sessions
         const identity = new Identity(privateKey);
         console.log('created identity')
+        // ERC-5489134589071234
         const stealthKey = keccak256(
             encodePacked(
                 ["string", "bytes32"],
@@ -145,7 +145,7 @@ export class FangornX402Middleware {
 
             // the client pays the facilitator (prepares a signed transferWithAuthorization call)
             const clientPayment = await this.fangorn.consumer.prepareRegister({
-                // TODO
+                // TODO: refactor field
                 burnerPrivateKey: "0xde0e6c1c331fcd8692463d6ffcf20f9f2e1847264f7a3f578cf54f62f05196cb",
                 paymentRecipient: facilitatorAddress,
                 amount: price,
@@ -270,8 +270,6 @@ export async function createFangornMiddleware(
     privateKey: Hex,
     config: AppConfig,
     domain: string,
-    jwt: string,
-    gateway: string,
 ): Promise<FangornX402Middleware> {
-    return FangornX402Middleware.create(privateKey, config, domain, jwt, gateway);
+    return FangornX402Middleware.create(privateKey, config, domain);
 }

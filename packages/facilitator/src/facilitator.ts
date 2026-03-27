@@ -80,10 +80,7 @@ async function createFacilitator(
     // the fangorn instance
     const fangorn = await Fangorn.create({
         privateKey,
-        storage: { pinata: { 
-            jwt: process.env.PINATA_JWT,
-            gateway: process.env.PINATA_GATEWAY
-        } },
+        storage: { storacha: { email: process.env.EMAIL } },
         encryption: { lit: true },
         config,
         domain: "localhost",
@@ -100,7 +97,7 @@ async function createFacilitator(
                 fangorn,
                 usdcContractAddress as Address,
                 // config.caip2,
-                // usdcDomainName,
+                // usdcDomainName,z
                 `eip155:${config.caip2}`,
                 nullifierStore
             )

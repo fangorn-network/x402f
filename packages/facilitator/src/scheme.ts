@@ -53,7 +53,10 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
         });
     }
 
-    async verify(payload: PaymentPayload, requirements: PaymentRequirements): Promise<VerifyResponse> {
+    async verify(
+        payload: PaymentPayload, 
+        requirements: PaymentRequirements
+    ): Promise<VerifyResponse> {
         try {
             const extra = (requirements as any).extra as any;
 
@@ -123,7 +126,9 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
                 transaction: hash,
                 payer: privateKeyToAccount(this.privateKey).address,
                 network: this.network,
-                extensions: { nullifier: nullifier.toString() },
+                extensions: {
+                    nullifier: nullifier.toString()
+                },
             };
         } catch (e) {
             return {
