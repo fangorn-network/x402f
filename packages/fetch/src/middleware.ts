@@ -6,7 +6,7 @@ import { type ClientEvmSigner } from "@x402/evm";
 import { SettlementRegistry } from "@fangorn-network/sdk/lib/registries/settlement-registry/index.js";
 import { privateKeyToAccount } from "viem/accounts";
 import { Identity } from "@semaphore-protocol/identity";
-import { type FetchResourceOptions, type FetchResourceResult } from "./types.js";
+import { FangornMiddlewareConfig, type FetchResourceOptions, type FetchResourceResult } from "./types.js";
 
 function createSignerFromWallet(walletClient: WalletClient, config: AppConfig): ClientEvmSigner {
     const account = walletClient.account;
@@ -37,7 +37,7 @@ export class FangornX402Middleware {
     private readonly identity: Identity;
     private readonly stealthKey: Hex;
     private readonly stealthAddress: Address;
-    private readonly config: AppConfig;
+    private readonly fetchConfig: FangornMiddlewareConfig;
 
     private constructor(
         fangorn: Fangorn,
@@ -46,7 +46,7 @@ export class FangornX402Middleware {
         identity: Identity,
         stealthKey: Hex,
         stealthAddress: Address,
-        config: AppConfig,
+        fetchConfig: FangornMiddlewareConfig,
     ) {
         this.fangorn = fangorn;
         this.fetchWithPayment = fetchWithPayment;
@@ -54,42 +54,37 @@ export class FangornX402Middleware {
         this.identity = identity;
         this.stealthKey = stealthKey;
         this.stealthAddress = stealthAddress;
-        this.config = config;
+        this.fetchConfig = fetchConfig;
     }
 
-    static async create(
-        privateKey: Hex,
-        config: AppConfig,
-        domain: string,
-    ): Promise<FangornX402Middleware> {
+    static async create(options: FangornMiddlewareConfig): Promise<FangornX402Middleware> {
         const walletClient = createWalletClient({
-            account: privateKeyToAccount(privateKey),
-            chain: config.chain,
-            transport: http(config.rpcUrl),
+            account: privateKeyToAccount(options.privateKey),
+            chain: options.config.chain,
+            transport: http(options.config.rpcUrl),
         });
 
         // we only need to read from storage
         const fangorn = await Fangorn.create({
-            privateKey,
+            privateKey: options.privateKey,
             storage: { storacha: { readOnly: true } },
             encryption: { lit: true },
-            config,
-            domain,
+            config: options.config,
+            domain: options.domain,
         });
 
         const fetchWithPayment = wrapFetchWithPaymentFromConfig(
             globalThis.fetch.bind(globalThis),
             {
                 schemes: [{
-                    network: `eip155:${config.caip2}`,
-                    client: new ExactEvmScheme(createSignerFromWallet(walletClient, config)),
+                    network: `eip155:${options.config.caip2}`,
+                    client: new ExactEvmScheme(createSignerFromWallet(walletClient, options.config)),
                 }],
             },
         );
 
-        // Derive identity + stealth key once — stable across sessions
-        const identity = new Identity(privateKey);
-        console.log('created identity')
+        // Derive identity + stealth key (stable across sessions)
+        const identity = new Identity(options.privateKey);
         // ERC-5489134589071234
         const stealthKey = keccak256(
             encodePacked(
@@ -98,10 +93,7 @@ export class FangornX402Middleware {
             )
         ) as Hex;
 
-        console.log('created stealth key ' + stealthKey)
         const stealthAddress = privateKeyToAccount(stealthKey).address;
-
-        console.log('stealth address ' + stealthAddress)
 
         return new FangornX402Middleware(
             fangorn,
@@ -110,23 +102,22 @@ export class FangornX402Middleware {
             identity,
             stealthKey,
             stealthAddress,
-            config,
+            options,
         );
     }
 
     async fetchResource(options: FetchResourceOptions): Promise<FetchResourceResult> {
         const field = "audio";
-        const facilitatorUrl = "http://127.0.0.1:30333";
         const usdcContractAddress = "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d" as Address;
         const usdcDomainName = "USD Coin";
         const facilitatorAddress = "0x147c24c5Ea2f1EE1ac42AD16820De23bBba45Ef6" as Address;
 
         const {
+            privateKey,
             owner,
             schemaName,
             tag,
-            baseUrl = "http://127.0.0.1:4021",
-            endpoint = "/",
+            baseUrl = "http://127.0.0.1:30333",
             authToken,
         } = options;
 
@@ -141,12 +132,11 @@ export class FangornX402Middleware {
 
             const resourceId = SettlementRegistry.deriveResourceId(owner, schemaId, tag);
             const price = await this.fangorn.getSettlementRegistry().getPrice(resourceId);
-            console.log("price:", price, "resourceId:", resourceId);
 
             // the client pays the facilitator (prepares a signed transferWithAuthorization call)
             const clientPayment = await this.fangorn.consumer.prepareRegister({
                 // TODO: refactor field
-                burnerPrivateKey: "0xde0e6c1c331fcd8692463d6ffcf20f9f2e1847264f7a3f578cf54f62f05196cb",
+                burnerPrivateKey: privateKey,
                 paymentRecipient: facilitatorAddress,
                 amount: price,
                 usdcAddress: usdcContractAddress,
@@ -154,17 +144,22 @@ export class FangornX402Middleware {
                 usdcDomainVersion: "2",
             });
 
+            // can be empty
+            const authHeaders = authToken
+                ? { "Content-Type": "application/json", "Authorization": `Bearer ${authToken}` }
+                : { "Content-Type": "application/json" };
+
             // get the response from the verify call directly and handle it
-            const verifyRes = await fetch(`${facilitatorUrl}/verify`, {
+            const verifyRes = await fetch(`${baseUrl}/verify`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: authHeaders,
                 body: JSON.stringify({
                     paymentPayload: {
                         x402Version: 2,
                     },
                     paymentRequirements: {
                         scheme: "exact",
-                        network: `eip155:${this.config.caip2}`,
+                        network: `eip155:${this.fetchConfig.config.caip2}`,
                         amount: price.toString(),
                         asset: usdcContractAddress,
                         payTo: facilitatorAddress,
@@ -194,16 +189,16 @@ export class FangornX402Middleware {
             });
 
             // settle
-            const settleRes = await fetch(`${facilitatorUrl}/settle`, {
+            const settleRes = await fetch(`${baseUrl}/settle`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: authHeaders,
                 body: JSON.stringify({
                     paymentPayload: {
                         x402Version: 2,
                     },
                     paymentRequirements: {
                         scheme: "exact",
-                        network: `eip155:${this.config.caip2}`,
+                        network: `eip155:${this.fetchConfig.config.caip2}`,
                         amount: price.toString(),
                         asset: usdcContractAddress,
                         payTo: facilitatorAddress,
@@ -229,8 +224,8 @@ export class FangornX402Middleware {
             // decrypt
             const stealthWalletClient = createWalletClient({
                 account: privateKeyToAccount(this.stealthKey),
-                chain: this.config.chain,
-                transport: http(this.config.rpcUrl),
+                chain: this.fetchConfig.config.chain,
+                transport: http(this.fetchConfig.config.rpcUrl),
             });
 
             const data = await this.fangorn.consumer.decrypt({
@@ -257,6 +252,7 @@ export class FangornX402Middleware {
             };
         }
     }
+
     getAddress(): Hex {
         return this.walletClient.account!.address;
     }
@@ -264,12 +260,4 @@ export class FangornX402Middleware {
     getPaymentFetch(): typeof fetch {
         return this.fetchWithPayment;
     }
-}
-
-export async function createFangornMiddleware(
-    privateKey: Hex,
-    config: AppConfig,
-    domain: string,
-): Promise<FangornX402Middleware> {
-    return FangornX402Middleware.create(privateKey, config, domain);
 }

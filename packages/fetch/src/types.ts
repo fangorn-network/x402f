@@ -1,19 +1,21 @@
 import { AppConfig } from "@fangorn-network/sdk";
-import { Address } from "viem";
+import { Address, Hex } from "viem";
 
 export interface FangornMiddlewareConfig {
-    pinataJwt: string;
-    pinataGateway: string;
-    appConfig: AppConfig;
-    domain?: string;
+    privateKey: Hex,
+    config: AppConfig;
+    usdcContractAddress: Address;
+    usdcDomainName: string;
+    facilitatorAddress: Address;
+    domain: string;
 }
 
 export interface FetchResourceOptions {
+    privateKey: Hex,
     owner: Address,
     schemaName: string;
     tag: string;
-    baseUrl?: string;
-    endpoint?: string;
+    baseUrl: string;
     authToken?: string;
 }
 

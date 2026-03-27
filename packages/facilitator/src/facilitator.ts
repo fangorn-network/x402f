@@ -80,7 +80,7 @@ async function createFacilitator(
     // the fangorn instance
     const fangorn = await Fangorn.create({
         privateKey,
-        storage: { storacha: { email: process.env.EMAIL } },
+        storage: { storacha: { readOnly: true } },
         encryption: { lit: true },
         config,
         domain: "localhost",
@@ -123,11 +123,7 @@ export async function getFacilitator(): Promise<x402Facilitator> {
             throw new Error("❌ FACILITATOR_EVM_PRIVATE_KEY environment variable is required");
         }
 
-        const usdcDomainName = process.env.USDC_DOMAIN_NAME!;
         const usdcContractAddress = process.env.USDC_CONTRACT_ADDR!;
-        const settlementTrackerAddress = process.env.SETTLEMENT_TRACKER_ADDR!;
-        const chainName = process.env.CHAIN!
-
         // Initialize the EVM account from private key
         const evmAccount = privateKeyToAccount(privkey as `0x${string}`);
 
@@ -135,7 +131,7 @@ export async function getFacilitator(): Promise<x402Facilitator> {
         // default to arbitrum
         let config = FangornConfig.ArbitrumSepolia;
         let networkString = "arbitrum-sepolia";
-
+        // TODO: multichain support
         // if (chainName === "baseSepolia") {
         // 	networkString = "base-sepolia";
         // 	config = FangornConfig.BaseSepolia;
@@ -146,9 +142,7 @@ export async function getFacilitator(): Promise<x402Facilitator> {
             config,
             networkString as Network,
             evmAccount,
-            // usdcDomainName,
             usdcContractAddress as Address,
-            // settlementTrackerAddress as Address,
         );
     }
 

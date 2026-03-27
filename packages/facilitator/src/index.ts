@@ -1,10 +1,13 @@
 import { SettleResponse, VerifyResponse } from "@x402/core/types";
 import { PaymentPayload, PaymentRequirements } from "@x402/fetch";
 import express from "express";
+import morgan from "morgan";
 import { getFacilitator } from "./facilitator.js";
 
 // Initialize Express app
 const app = express();
+
+app.use(morgan('combined'))
 app.use(express.json());
 
 /**

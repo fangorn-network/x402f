@@ -9,8 +9,8 @@ Built on [Fangorn](https://github.com/fangorn-network/fangorn) threshold encrypt
 ---
 
 ## How It Works
-
-![Architecture diagram](image.png)
+![alt text](image-1.png)
+<!-- ![Architecture diagram](image.png) -->
 
 1. **Seller** registers a datasource and uploads encrypted content via Fangorn — no dedicated infra needed.
 2. **Buyer** receives a ciphertext *before* payment. They can verify what they're purchasing against chain state.
@@ -30,14 +30,11 @@ Built on [Fangorn](https://github.com/fangorn-network/fangorn) threshold encrypt
 
 ## Architecture
 
-x402f consists of two services:
+Unlike traditional x402, x402f doesn't require a resource server to deliver anything. Instead, seller's fetch locked 'intent bound data' from offchain storage, queries the chain for access conditions, and interacts with a facilitator to settle for access to the content.
 
-| Service | Description | Default Port |
-|---|---|---|
-| **Facilitator** | Verifies payments and issues decryption shares | `30333` |
-| **Resource Server** | Serves encrypted data and coordinates with the facilitator | `4021` |
+The **facilitator** verifies 
 
-Both services are stateless and can be run by anyone. See the [Fangorn docs](https://github.com/fangorn-network/fangorn) to register datasources and upload content.
+> See the [Fangorn docs](https://github.com/fangorn-network/fangorn) to register datasources and upload content.
 
 ---
 
@@ -45,8 +42,8 @@ Both services are stateless and can be run by anyone. See the [Fangorn docs](htt
 
 ### Prerequisites
 
-- Node.js 22+
-- pnpm
+- Install Node.js 22+
+- Install `pnpm`
 
 ### Setup
 
@@ -64,15 +61,11 @@ cp .env.local .env
 ### Run locally
 
 ``` bash
-# Start the facilitator (runs on :30333)
+# Start the facilitator (by default, runs on :30333)
 pnpm run facilitator
-# In a separate terminal, start the resource server (runs on :4021)
-pnpm run server
 ```
 
 ### Run with Docker
-
-This will start the x402f facilitator and server as docker images exposed on ports 30333 and 4021, respectively. 
 
 ``` bash
 docker compose up --build

@@ -20,12 +20,13 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@fangorn-network/sdk": "file:../../../fangorn",
+    "@fangorn-network/sdk": "catalog:",
     "@semaphore-protocol/identity": "^4.14.2",
     "@x402/core": "catalog:",
     "@x402/evm": "catalog:",
     "@x402/fetch": "catalog:",
     "express": "catalog:",
+    "morgan": "catalog:",
     "viem": "catalog:"
   },
   "devDependencies": {
