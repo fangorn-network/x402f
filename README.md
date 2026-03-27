@@ -1,16 +1,16 @@
 # x402f
 
-> Trust-minimized, Programmable,            Pay-per-use data APIs
+> Trust-minimized, Programmable, Pay-per-use data APIs
 
-**x402f** extends the [x402 protocol](https://x402.org) to invert the trust model entirely: the server never holds plaintext, never handles payments, and cannot withhold data — even if it goes offline.
+**x402f** extends the [x402 protocol](https://x402.org) to invert the trust model entirely: the server never holds plaintext, never handles payments, and cannot withhold data even if it goes offline.
 
 Built on [Fangorn](https://github.com/fangorn-network/fangorn) threshold encryption, x402f enables intent-bound data delivery: content encrypted under publicly verifiable conditions, decrypted locally by the buyer only after payment is confirmed on-chain.
 
 ---
 
 ## How It Works
-
-![Architecture diagram](image.png)
+![alt text](image-1.png)
+<!-- ![Architecture diagram](image.png) -->
 
 1. **Seller** registers a datasource and uploads encrypted content via Fangorn — no dedicated infra needed.
 2. **Buyer** receives a ciphertext *before* payment. They can verify what they're purchasing against chain state.
@@ -30,14 +30,11 @@ Built on [Fangorn](https://github.com/fangorn-network/fangorn) threshold encrypt
 
 ## Architecture
 
-x402f consists of two services:
+Unlike traditional x402, x402f doesn't require a resource server to deliver anything. Instead, seller's fetch locked 'intent bound data' from offchain storage, queries the chain for access conditions, and interacts with a facilitator to settle for access to the content.
 
-| Service | Description | Default Port |
-|---|---|---|
-| **Facilitator** | Verifies payments and issues decryption shares | `30333` |
-| **Resource Server** | Serves encrypted data and coordinates with the facilitator | `4021` |
+The **facilitator** verifies 
 
-Both services are stateless and can be run by anyone. See the [Fangorn docs](https://github.com/fangorn-network/fangorn) to register datasources and upload content.
+> See the [Fangorn docs](https://github.com/fangorn-network/fangorn) to register datasources and upload content.
 
 ---
 
@@ -45,8 +42,8 @@ Both services are stateless and can be run by anyone. See the [Fangorn docs](htt
 
 ### Prerequisites
 
-- Node.js 22+
-- pnpm
+- Install Node.js 22+
+- Install `pnpm`
 
 ### Setup
 
@@ -63,23 +60,20 @@ cp .env.local .env
 
 ### Run locally
 
-```bash
-# Start the facilitator (runs on :30333)
+``` bash
+# Start the facilitator (by default, runs on :30333)
 pnpm run facilitator
-
-# In a separate terminal, start the resource server (runs on :4021)
-pnpm run server
 ```
 
 ### Run with Docker
 
-```bash
+``` bash
 docker compose up --build
 ```
 
 ### Run the example client
 
-```bash
+``` bash
 pnpm run client:node
 ```
 
@@ -113,56 +107,3 @@ See the full [node client example](./examples/node/index.ts).
 ## License
 
 MIT
-<!-- # x402f 
-
-Pay-per-use data APIs without trusting the server.
-
-x402f is an extension of the x402 protocol that inverts the trust model: the server never holds a plaintext, never handles payments, and cannot withhold data (even if offline). 
-
--> See the [node client example](./examples/node/index.ts)
-
-## Key Features
-
-- programmable pricing with Fangorn
-- universal access control server for fetching resources (no infra for sellers)
-- trust-minimized
-
-## How it Works
-
-![alt text](image.png)
-
-## Setup
-
-First setup environment variables by running `cp .env.local .env` and filling in the details.
-
-## Start the Facilitator
-
-Start the facilitator first. This will run on localhost:30333
-
-`npm run facilitator`
-
-## Start the server
-
-Start the resource server once the faciltiator is running. This will run on localhost:4021
-
-`npm run server`
-
-## Run the node client example
-
-First install tsx with `npm install -D tsx`. Then run the example with `npm run client:node`.
-
-For data **consumers**: 
-- You *start* with a ciphertext before making a payment, which is decrypted locally. This also ensures data cannot be withheld post-purchase.
-- Pricing and ownership is verifiable against the finalized chain state.
-
-For data **sellers**:
-- You do not need to support any infrastructure at all to use the solution, as it only needs one resource server. However, anybody can run their own dedicated resource server if they choose (there can be multiple, but don't need to be).
-- You can dynamically price data without trusting the server or making code changes.
-
-## Architecture
-
-It uses [fangorn](https://github.com/fangorn-network/fangorn) for encryption and datasource registration/management. See the fangorn readme to learn how to register datasources and upload data that can be sold via x402f.
-
-## License 
-
-MIT  -->

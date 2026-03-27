@@ -1,3 +1,18 @@
 packages:
-  - 'packages/*'
-  - 'examples/*'
+  - packages/*
+  - examples/*
+
+catalog:
+  '@fangorn-network/sdk': ^2026.3.27
+  '@types/cors': ^2.8.19
+  '@types/express': ^5.0.6
+  '@x402/core': ^2.5.0
+  '@x402/evm': ^2.5.0
+  '@x402/express': ^2.5.0
+  '@x402/fetch': ^2.5.0
+  cors: ^2.8.6
+  express: ^5.2.1
+  morgan: ^1.10.1
+  pinata: ^2.5.5
+  tsdown: ^0.21.1
+  viem: 2.47.1

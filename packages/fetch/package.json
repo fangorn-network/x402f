@@ -1,6 +1,6 @@
 {
   "name": "@x402f/fetch",
-  "version": "2026.03.11.1",
+  "version": "2026.03.27",
   "description": "",
   "type": "module",
   "main": "./dist/index.js",
@@ -27,13 +27,14 @@
     "access": "public"
   },
   "dependencies": {
-    "@x402/core": "^2.5.0",
-    "@x402/evm": "^2.5.0",
-    "@x402/fetch": "^2.5.0",
-    "@fangorn-network/sdk": "2026.3.11"
+    "@fangorn-network/sdk": "catalog:",
+    "@semaphore-protocol/identity": "^4.14.2",
+    "@x402/core": "catalog:",
+    "@x402/evm": "catalog:",
+    "@x402/fetch": "catalog:"
   },
   "devDependencies": {
     "tsdown": "^0.21.1",
-    "viem": "2.46.3"
+    "viem": "2.47.1"
   }
 }

@@ -9,5 +9,5 @@ A wrapper around x402/fetch that:
 Install the package using pnpm:
 
 ``` sh
-pnpm i @x402f/fangorn
+pnpm i @x402f/fetch
 ```

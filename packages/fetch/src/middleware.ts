@@ -1,13 +1,13 @@
-import { x402Client } from "@x402/core/client";
-import { createPublicClient, http, type Address, type Hex, type WalletClient } from "viem";
+import { createPublicClient, createWalletClient, encodePacked, http, keccak256, toHex, type Address, type Hex, type WalletClient } from "viem";
 import { ExactEvmScheme } from "@x402/evm/exact/client";
-import { AppConfig, Fangorn, LitEncryptionService, PinataStorage } from "@fangorn-network/sdk";
+import { type AppConfig, Fangorn } from "@fangorn-network/sdk";
 import { wrapFetchWithPaymentFromConfig } from "@x402/fetch";
-import { ClientEvmSigner } from "@x402/evm";
+import { type ClientEvmSigner } from "@x402/evm";
+import { SettlementRegistry } from "@fangorn-network/sdk/lib/registries/settlement-registry/index.js";
+import { privateKeyToAccount } from "viem/accounts";
+import { Identity } from "@semaphore-protocol/identity";
+import { FangornMiddlewareConfig, type FetchResourceOptions, type FetchResourceResult } from "./types.js";
 
-/**
- * Wraps a viem WalletClient to satisfy x402's signer interface
- */
 function createSignerFromWallet(walletClient: WalletClient, config: AppConfig): ClientEvmSigner {
     const account = walletClient.account;
     if (!account) throw new Error("WalletClient must have an account attached");
@@ -20,7 +20,7 @@ function createSignerFromWallet(walletClient: WalletClient, config: AppConfig): 
     return {
         address: account.address,
         signTypedData: async (message) => walletClient.signTypedData({
-            account: walletClient.account!.type === 'local' ? account : account.address,
+            account: walletClient.account!.type === "local" ? account : account.address,
             domain: message.domain as any,
             types: message.types as any,
             primaryType: message.primaryType,
@@ -30,126 +30,221 @@ function createSignerFromWallet(walletClient: WalletClient, config: AppConfig): 
     };
 }
 
-/**
- * The configuration items for the x402f/fetch middleware
- * 
- */
-export interface FangornMiddlewareConfig {
-    pinataJwt: string;
-    pinataGateway: string;
-    appConfig: AppConfig;
-    domain?: string;
-}
-
-export interface FetchResourceOptions {
-    owner: Address,
-    datasourceName: string;
-    tag: string;
-    baseUrl?: string;
-    endpoint?: string;
-    authToken?: string; 
-}
-
-export interface FetchResourceResult {
-    success: boolean;
-    data?: Uint8Array;
-    dataString?: string;
-    alreadyPaid?: boolean;
-    paymentResponse?: unknown;
-    error?: string;
-}
-
 export class FangornX402Middleware {
-    private fangorn!: Fangorn;
-    private x402Client!: x402Client;
-    private fetchWithPayment!: typeof fetch;
-    private walletClient: WalletClient;
-    private initialized = false;
+    private readonly fangorn: Fangorn;
+    private readonly fetchWithPayment: typeof fetch;
+    private readonly walletClient: WalletClient;
+    private readonly identity: Identity;
+    private readonly stealthKey: Hex;
+    private readonly stealthAddress: Address;
+    private readonly fetchConfig: FangornMiddlewareConfig;
 
-    constructor(walletClient: WalletClient) {
-        if (!walletClient.account) {
-            throw new Error("WalletClient must have an account attached");
-        }
+    private constructor(
+        fangorn: Fangorn,
+        fetchWithPayment: typeof fetch,
+        walletClient: WalletClient,
+        identity: Identity,
+        stealthKey: Hex,
+        stealthAddress: Address,
+        fetchConfig: FangornMiddlewareConfig,
+    ) {
+        this.fangorn = fangorn;
+        this.fetchWithPayment = fetchWithPayment;
         this.walletClient = walletClient;
+        this.identity = identity;
+        this.stealthKey = stealthKey;
+        this.stealthAddress = stealthAddress;
+        this.fetchConfig = fetchConfig;
     }
 
-    async init(config: AppConfig, domain: string, pinataJwt: string, pinataGateway: string): Promise<this> {
-        if (this.initialized) return this;
-
-        const encryptionService = await LitEncryptionService.init(config.chainName);
-
-        const storageAdapter = new PinataStorage(pinataJwt, pinataGateway);
-
-        this.fangorn = await Fangorn.init(this.walletClient, storageAdapter, encryptionService, domain, config);
-
-        this.fetchWithPayment = wrapFetchWithPaymentFromConfig(globalThis.fetch.bind(globalThis), {
-            schemes: [{
-                network: `eip155:${config.caip2}`,
-                client: new ExactEvmScheme(createSignerFromWallet(this.walletClient, config)),
-            }],
+    static async create(options: FangornMiddlewareConfig): Promise<FangornX402Middleware> {
+        const walletClient = createWalletClient({
+            account: privateKeyToAccount(options.privateKey),
+            chain: options.config.chain,
+            transport: http(options.config.rpcUrl),
         });
 
-        this.initialized = true;
-        return this;
+        // we only need to read from storage
+        const fangorn = await Fangorn.create({
+            privateKey: options.privateKey,
+            storage: { storacha: { readOnly: true } },
+            encryption: { lit: true },
+            config: options.config,
+            domain: options.domain,
+        });
+
+        const fetchWithPayment = wrapFetchWithPaymentFromConfig(
+            globalThis.fetch.bind(globalThis),
+            {
+                schemes: [{
+                    network: `eip155:${options.config.caip2}`,
+                    client: new ExactEvmScheme(createSignerFromWallet(walletClient, options.config)),
+                }],
+            },
+        );
+
+        // Derive identity + stealth key (stable across sessions)
+        const identity = new Identity(options.privateKey);
+        // ERC-5489134589071234
+        const stealthKey = keccak256(
+            encodePacked(
+                ["string", "bytes32"],
+                ["fangorn:stealth:", toHex(identity.secretScalar, { size: 32 })],
+            )
+        ) as Hex;
+
+        const stealthAddress = privateKeyToAccount(stealthKey).address;
+
+        return new FangornX402Middleware(
+            fangorn,
+            fetchWithPayment,
+            walletClient,
+            identity,
+            stealthKey,
+            stealthAddress,
+            options,
+        );
     }
 
-    private ensureInitialized(): void {
-        if (!this.initialized) {
-            throw new Error("FangornX402Middleware not initialized. Call init() first.");
-        }
-    }
-
-    /**
-     * Fetch and decrypt a resource, handling x402 payment flow automatically
-     */
     async fetchResource(options: FetchResourceOptions): Promise<FetchResourceResult> {
-        this.ensureInitialized();
+        const field = "audio";
+        const usdcContractAddress = "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d" as Address;
+        const usdcDomainName = "USD Coin";
+        const facilitatorAddress = "0x147c24c5Ea2f1EE1ac42AD16820De23bBba45Ef6" as Address;
 
         const {
+            privateKey,
             owner,
-            datasourceName,
+            schemaName,
             tag,
-            baseUrl = "http://1.2.3.4:4021",
-            endpoint = "/",
+            baseUrl = "http://127.0.0.1:30333",
             authToken,
         } = options;
 
         try {
-            const params = new URLSearchParams({ owner, name: datasourceName, tag });
-            console.log(`${baseUrl}${endpoint}?${params.toString()}`,);
-            const response = await this.fetchWithPayment(
-                `${baseUrl}${endpoint}?${params.toString()}`,
-                {
-                    method: "GET",
-                    headers: { 
-                        "Accept": "application/json",
-                        "Authorization": `Bearer ${authToken}`,
+            // resolve schema
+            let schemaId: Hex;
+            try {
+                schemaId = await this.fangorn.getSchemaRegistry().schemaId(schemaName);
+            } catch {
+                throw new Error(`Schema "${schemaName}" not found on-chain.`);
+            }
+
+            const resourceId = SettlementRegistry.deriveResourceId(owner, schemaId, tag);
+            const price = await this.fangorn.getSettlementRegistry().getPrice(resourceId);
+
+            // the client pays the facilitator (prepares a signed transferWithAuthorization call)
+            const clientPayment = await this.fangorn.consumer.prepareRegister({
+                // TODO: refactor field
+                burnerPrivateKey: privateKey,
+                paymentRecipient: facilitatorAddress,
+                amount: price,
+                usdcAddress: usdcContractAddress,
+                usdcDomainName,
+                usdcDomainVersion: "2",
+            });
+
+            // can be empty
+            const authHeaders = authToken
+                ? { "Content-Type": "application/json", "Authorization": `Bearer ${authToken}` }
+                : { "Content-Type": "application/json" };
+
+            // get the response from the verify call directly and handle it
+            const verifyRes = await fetch(`${baseUrl}/verify`, {
+                method: "POST",
+                headers: authHeaders,
+                body: JSON.stringify({
+                    paymentPayload: {
+                        x402Version: 2,
                     },
-                }
-            );
+                    paymentRequirements: {
+                        scheme: "exact",
+                        network: `eip155:${this.fetchConfig.config.caip2}`,
+                        amount: price.toString(),
+                        asset: usdcContractAddress,
+                        payTo: facilitatorAddress,
+                        extra: {
+                            name: usdcDomainName,
+                            version: "2",
+                            resourceId,
+                            clientPayment,
+                            identityCommitment: this.identity.commitment.toString(),
+                            stealthAddress: this.stealthAddress,
+                        },
+                    },
+                }, (_, v) => typeof v === "bigint" ? v.toString() : v),
+            });
 
-            if (response.status === 402) {
-                return {
-                    success: false,
-                    error: "Payment required but not processed",
-                    alreadyPaid: false,
-                };
+            const verifyBody = await verifyRes.json();
+
+            if (!verifyBody.isValid) {
+                return { success: false, error: `Verify failed: ${verifyBody.invalidReason}` };
             }
 
-            if (response.ok) {
-                const decryptedData = await this.fangorn.decryptFile(owner, datasourceName, tag);
-                const dataString = new TextDecoder().decode(decryptedData);
-                return {
-                    success: true,
-                    data: decryptedData,
-                    dataString,
-                };
+            // valid => isRegistered == true => prepare settle (builds semaphore proof)
+            const preparedSettle = await this.fangorn.consumer.prepareSettle({
+                resourceId,
+                identity: this.identity,
+                stealthAddress: this.stealthAddress,
+            });
+
+            // settle
+            const settleRes = await fetch(`${baseUrl}/settle`, {
+                method: "POST",
+                headers: authHeaders,
+                body: JSON.stringify({
+                    paymentPayload: {
+                        x402Version: 2,
+                    },
+                    paymentRequirements: {
+                        scheme: "exact",
+                        network: `eip155:${this.fetchConfig.config.caip2}`,
+                        amount: price.toString(),
+                        asset: usdcContractAddress,
+                        payTo: facilitatorAddress,
+                        extra: {
+                            name: usdcDomainName,
+                            version: "2",
+                            resourceId,
+                            preparedSettle,
+                            stealthAddress: this.stealthAddress,
+                        },
+                    },
+                }, (_, v) => typeof v === "bigint" ? v.toString() : v),
+            });
+
+            const settleBody = await settleRes.json();
+
+            if (!settleBody.success) {
+                return { success: false, error: `Settle failed: ${settleBody.errorReason}` };
             }
+
+            const nullifierHash = BigInt(settleBody.extensions.nullifier);
+
+            // decrypt
+            const stealthWalletClient = createWalletClient({
+                account: privateKeyToAccount(this.stealthKey),
+                chain: this.fetchConfig.config.chain,
+                transport: http(this.fetchConfig.config.rpcUrl),
+            });
+
+            const data = await this.fangorn.consumer.decrypt({
+                owner,
+                schemaId,
+                tag,
+                field,
+                walletClient: stealthWalletClient,
+                nullifierHash,
+                identity: this.identity,
+                skipSettlementCheck: true,
+            });
 
             return {
-                success: false,
-                error: `Unexpected response status: ${response.status}`,
+                success: true,
+                data,
+                dataString: new TextDecoder().decode(data),
             };
+
         } catch (error) {
             return {
                 success: false,
@@ -158,38 +253,11 @@ export class FangornX402Middleware {
         }
     }
 
-    /**
-     * Direct access to x402 client
-     */
-    getX402Client(): x402Client {
-        this.ensureInitialized();
-        return this.x402Client;
-    }
-
-    /**
-     * Get the payment-wrapped fetch function for custom requests
-     */
-    getPaymentFetch(): typeof fetch {
-        this.ensureInitialized();
-        return this.fetchWithPayment;
-    }
-
-    /**
-     * Get the connected wallet address
-     */
     getAddress(): Hex {
         return this.walletClient.account!.address;
     }
-}
 
-export async function createFangornMiddleware(
-    walletClient: WalletClient,
-    config: AppConfig,
-    domain: string,
-    jwt: string,
-    gateway: string,
-): Promise<FangornX402Middleware> {
-    const middleware = new FangornX402Middleware(walletClient);
-    await middleware.init(config, domain, jwt, gateway);
-    return middleware;
+    getPaymentFetch(): typeof fetch {
+        return this.fetchWithPayment;
+    }
 }

@@ -1,6 +1,6 @@
 {
   "name": "@x402f/facilitator",
-  "version": "2026.03.10",
+  "version": "2026.03.27",
   "description": "The x402f facilitator",
   "type": "module",
   "main": "./dist/index.js",
@@ -20,12 +20,14 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@x402/core": "^2.5.0",
-    "@x402/evm": "^2.5.0",
-    "@x402/fetch": "^2.5.0",
-    "express": "^5.2.1",
-    "@fangorn-network/sdk": "2026.3.11",
-    "viem": "^2.46.3"
+    "@fangorn-network/sdk": "catalog:",
+    "@semaphore-protocol/identity": "^4.14.2",
+    "@x402/core": "catalog:",
+    "@x402/evm": "catalog:",
+    "@x402/fetch": "catalog:",
+    "express": "catalog:",
+    "morgan": "catalog:",
+    "viem": "catalog:"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",

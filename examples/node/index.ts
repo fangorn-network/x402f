@@ -1,9 +1,7 @@
-import { createWalletClient, http, type Hex } from "viem";
-import { Address, privateKeyToAccount } from "viem/accounts";
-import { atob } from "node:buffer";
-import { createFangornMiddleware } from "@x402f/fetch";
+import { type Hex } from "viem";
+import { Address } from "viem/accounts";
+import { FangornX402Middleware } from "../../packages/fetch/src/middleware.js";
 import { FangornConfig } from "@fangorn-network/sdk";
-
 
 const getEnv = (key: string): string => {
     const value = process.env[key];
@@ -18,40 +16,33 @@ const config = envChain == "arbitrumSepolia" ? FangornConfig.ArbitrumSepolia : F
 
 async function nodeExample() {
 
-    const account = privateKeyToAccount(getEnv("EVM_PRIVATE_KEY") as Hex);
+    const privateKey = getEnv("EVM_PRIVATE_KEY") as Hex;
     const resourceServerUrl = getEnv("RESOURCE_SERVER_URL");
-    const pinataJwt = getEnv("PINATA_JWT");
-    const pinataGateway = getEnv("PINATA_GATEWAY");
-
     const domain = "localhost:3000";
 
-    const walletClient = createWalletClient({
-        account,
-        chain: config.chain,
-        transport: http(config.rpcUrl),
+    const middleware = await FangornX402Middleware.create({
+        privateKey,
+        config,
+        usdcContractAddress: "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d",
+        usdcDomainName: "USD Coin",
+        facilitatorAddress: "0x147c24c5Ea2f1EE1ac42AD16820De23bBba45Ef6",
+        domain,
     });
 
-    const middleware = await createFangornMiddleware(
-        walletClient,
-        config,
-        domain,
-        pinataJwt,
-        pinataGateway
-    );
-
     const owner = "0x147c24c5Ea2f1EE1ac42AD16820De23bBba45Ef6" as Address;
-    const datasourceName = "fangorn";
-    const tag = "helloFangorn.txt";
+    const schemaName = "noagent-fangorn.test.music.v0";
+    const tag = "track4";
 
     const result = await middleware.fetchResource({
+        privateKey,
         owner,
-        datasourceName,
+        schemaName,
         tag,
         baseUrl: resourceServerUrl,
     });
 
     if (result.success) {
-        console.log("Decrypted result:", atob((result as any).dataString));
+        console.log("Decrypted result:", JSON.stringify(result));
         process.exit(0)
     } else {
         console.error("Failed:", result.error);
