@@ -135,7 +135,7 @@ export class FangornX402Middleware {
 
             // the client pays the facilitator (prepares a signed transferWithAuthorization call)
             const clientPayment = await this.fangorn.consumer.prepareRegister({
-                // TODO: refactor field
+                // TODO: refactor field in Fangorn
                 burnerPrivateKey: privateKey,
                 paymentRecipient: facilitatorAddress,
                 amount: price,

@@ -1,40 +1,37 @@
 # x402f
 
-> Trust-minimized, Programmable, Pay-per-use data APIs
+> Trust-minimized, pay-gated data for agents. Built on [Fangorn](https://github.com/fangorn-network/fangorn).
 
-**x402f** extends the [x402 protocol](https://x402.org) to invert the trust model entirely: the server never holds plaintext, never handles payments, and cannot withhold data even if it goes offline.
+**x402f** is a payment and access-control layer for encrypted data. It extends the [x402 protocol](https://x402.org) with a register/claim model backed by Fangorn and Semaphore ZK proofs. Buyers get **private purchases**, **private retrieval**, and **no on-chain linkage** between their identity and the resource they accessed. Sellers gain easy and verifiable programmability for their access condition, able to configure price or other conditions (like NFT ownership) for gating decryption. In addition, no party is required to support additional infrastructure, requiring no server to release data.
 
-Built on [Fangorn](https://github.com/fangorn-network/fangorn) threshold encryption, x402f enables intent-bound data delivery: content encrypted under publicly verifiable conditions, decrypted locally by the buyer only after payment is confirmed on-chain.
+The semi-trusted facilitator never holds plaintext and cannot withhold data delivery after settlement. Even if the server goes offline, the buyer already has the ciphertext.
 
 ---
+
+## Packages
+
+| Package | Description | Readme |
+|---|---|---|
+| [`@fangorn-network/fetch`](./packages/fetch) | Client-side fetch wrapper. Handles payment, ZK proof generation, and local decryption | [link](./packages/fetch/README.md) |
+| [`@fangorn-network/facilitator`](./packages/facilitator) | Settlement server. Registers buyers, submits proofs on-chain, returns nullifiers | [link](./packages/facilitator/README.md) |
+
+---
+
 
 ## How It Works
-![alt text](image-1.png)
-<!-- ![Architecture diagram](image.png) -->
 
-1. **Seller** registers a datasource and uploads encrypted content via Fangorn — no dedicated infra needed.
-2. **Buyer** receives a ciphertext *before* payment. They can verify what they're purchasing against chain state.
-3. **Payment** is made via x402. The facilitator verifies it and issues a decryption share.
-4. **Decryption** happens locally. The server never sees plaintext, and can never withhold data post-purchase.
+There are four main roles within x402f.
 
----
+- **The Seller** encrypts data against a *schema* using Fangorn and registers it onchains within the datasource registry and settlement registry
+- **The Buyer** fetches ciphertexts from IPFS and uses the x402f fetch client to unlock them. Unlike traditional x402, the buyer must participate in two rounds of communication:
+  - Phase 1: The buyer calls the facilitator's `/settle` endpoint and passes a transferWithAuthorization call that funds the facilitator itself, also passing along a commitment to their sempahore identity.
+  - Phase 2: After receiving a 200 from the facilitator, the buyer uses a secret key to construct a valid proof that their identity has been registered in the semaphore group for a given resource. 
+  - Phase 3: After receiving a 200 OK and a nullifier from the facilitator, attempt to use the nullifier to decrypt the content.
+- **The Facilitator** is responsible for executing registrations and claims against the settlement registry, acting as a 'privacy proxy' for callers by generating ephemeral burner keys, ensuring no linkage between the caller and the actual data being consumed. At present, this is a semi-trusted, centralized server. We intent to resolve these in the future, eliminating the need for any trust against the facilitator. For more details, see the [facilitator readme](./packages/facilitator/README.md).
 
-## Key Features
+Ownership and access conditions are verifiable against on-chain state at every step. The facilitator is semi-trusted: it cannot read plaintext or forge decryption shares, but it does execute settlement on-chain. See [Architecture Notes](#architecture-notes).
 
-- **Programmable pricing** — dynamic, verifiable pricing through Fangorn, no code changes required
-- **Zero seller infrastructure** — anyone can sell data without running their own server
-- **Trust-minimized** — buyers start with the ciphertext; payment and ownership are verifiable on-chain
-- **Censorship-resistant** — data cannot be withheld after purchase, even if the server goes offline
-
----
-
-## Architecture
-
-Unlike traditional x402, x402f doesn't require a resource server to deliver anything. Instead, seller's fetch locked 'intent bound data' from offchain storage, queries the chain for access conditions, and interacts with a facilitator to settle for access to the content.
-
-The **facilitator** verifies 
-
-> See the [Fangorn docs](https://github.com/fangorn-network/fangorn) to register datasources and upload content.
+![x402f-e2e-diagram](./image-1.png)
 
 ---
 
@@ -42,65 +39,52 @@ The **facilitator** verifies
 
 ### Prerequisites
 
-- Install Node.js 22+
-- Install `pnpm`
+- Node.js 22+
+- `pnpm`
 
 ### Setup
 
 ```bash
-# Clone and install
 git clone https://github.com/fangorn-network/x402f
 cd x402f
 pnpm install
 
-# Configure environment
-cp .env.local .env
-# Fill in your details in .env
+cp packages/facilitator/.env.local packages/facilitator/.env
+# Fill in your details
 ```
 
-### Run locally
+### Run the facilitator
 
-``` bash
-# Start the facilitator (by default, runs on :30333)
-pnpm run facilitator
-```
-
-### Run with Docker
-
-``` bash
+```bash
+# Local, defaults to port 30333
+pnpm facilitator
+# Docker
 docker compose up --build
 ```
 
 ### Run the example client
 
-``` bash
+```bash
+# copy env vars, fill in details
+cp examples/node/.env.local examples/node/.env
 pnpm run client:node
 ```
 
-See the full [node client example](./examples/node/index.ts).
+See the full [node example](./examples/node/).
 
 ---
 
-## For Data Consumers
+## Architecture Notes
 
-- You receive the **ciphertext before payment** — verify what you're buying before spending anything
-- Decryption happens **locally** after payment — the server cannot withhold your data
-- Pricing and ownership are **verifiable against finalized chain state**
-
-## For Data Sellers
-
-- **No infrastructure required** — the shared resource server handles delivery
-- **Dynamic pricing** — update prices through Fangorn without touching code or redeploying
-- Optionally run a **dedicated resource server** for more control (but you don't have to)
+The facilitator in this release is a centralized service, similar to a standard x402 facilitator. It is the only party with full insight who can link buyer-seller-resource-price (perhaps a future point of monetization). However, it is trust-minimized in the sense that it cannot read plaintext and cannot forge identities or manipulate proofs, but settlement routing runs on a hosted server. This means that the facilitator could still succumb to a bevy of attacks or malicious behavior, such as losing network between registration and claim submission (a recoverable outage for the client and facilitator alike) or simply failing to return the nullifier. These issue will all be addressed in the near future.
 
 ---
 
-## Environment Variables
+## Related
 
-| Variable | Description |
-|---|---|
-| `FACILITATOR_DOMAIN` | Hostname of the facilitator (e.g. `http://facilitator` in Docker, or `https://facilitator.example.com` in prod) |
-| `FACILITATOR_PORT` | Port the facilitator listens on (default: `30333`) |
+- [Fangorn SDK](https://github.com/fangorn-network/fangorn): encrypt and publish data, manage access conditions
+- [x402](https://x402.org): the HTTP payment protocol this extends
+- [Coinbase x402 Facilitator docs](https://docs.cdp.coinbase.com/x402/core-concepts/facilitator):reference for the standard facilitator interface x402f extends
 
 ---
 
