@@ -31,7 +31,7 @@ async function nodeExample() {
 
     const owner = "0x147c24c5Ea2f1EE1ac42AD16820De23bBba45Ef6" as Address;
     const schemaName = "noagent-fangorn.test.music.v0";
-    const tag = "track4";
+    const tag = "test";
 
     const result = await middleware.fetchResource({
         privateKey,
