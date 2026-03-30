@@ -133,7 +133,6 @@ export class FangornX402Middleware {
             const resourceId = SettlementRegistry.deriveResourceId(owner, schemaId, tag);
             const price = await this.fangorn.getSettlementRegistry().getPrice(resourceId);
 
-            console.log('price: ' + price)
             // the client pays the facilitator (prepares a signed transferWithAuthorization call)
             const clientPayment = await this.fangorn.consumer.prepareRegister({
                 // TODO: refactor field in Fangorn
