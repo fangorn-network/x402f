@@ -1,6 +1,6 @@
 import { type Hex } from "viem";
 import { Address } from "viem/accounts";
-import { FangornX402Middleware } from "../../packages/fetch/src/middleware.js";
+import { FangornX402Middleware } from "@fangorn-network/fetch";
 import { FangornConfig } from "@fangorn-network/sdk";
 
 const getEnv = (key: string): string => {
