@@ -47,13 +47,13 @@ importers:
 
   examples/node:
     dependencies:
+      '@fangorn-network/fetch':
+        specifier: 2026.3.3-1.1
+        version: 2026.3.3-1.1(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(ethers@5.7.2)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.24.3)
       '@fangorn-network/sdk':
         specifier: ^2026.3.28
         version: 2026.3.28(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.24.3)
     devDependencies:
-      '@fangorn-network/fetch':
-        specifier: ^2026.3.31
-        version: 2026.3.31(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(ethers@5.7.2)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.24.3)
       viem:
         specifier: 'catalog:'
         version: 2.47.1(typescript@5.9.3)(zod@3.24.3)
@@ -720,8 +720,8 @@ packages:
   '@ethersproject/wordlists@5.8.0':
     resolution: {integrity: sha512-2df9bbXicZws2Sb5S6ET493uJ0Z84Fjr3pC4tu/qlnZERibZCeUVuqdtt+7Tv9xxhUxHoIekIA7avrKUWHrezg==}
 
-  '@fangorn-network/fetch@2026.3.31':
-    resolution: {integrity: sha512-f3TLvR7aAsKH7YqsI6JdOtc34ooWckDgUp711/Zc7xJI73eHiQFT0OFx9JATlTycqQKFe8rY6CS3DZIEALvx1w==}
+  '@fangorn-network/fetch@2026.3.3-1.1':
+    resolution: {integrity: sha512-r81u1wFU1TalhFbvxtLk+1wnkX5XImuaP9y3s0ipobfNmX6K8fBhBmn9DCbTJNQKISYwqIeL8NfpC3FEfqU1Yw==}
 
   '@fangorn-network/sdk@2026.3.28':
     resolution: {integrity: sha512-8altunhze6tNyj+xLBLogtz3JrbL57+C+CNx3QPwt84FmyVlENQWSTveRLdd6NRlGn6Beooikk3eOsfMv+I2lA==}
@@ -6308,7 +6308,7 @@ snapshots:
       '@ethersproject/properties': 5.8.0
       '@ethersproject/strings': 5.8.0
 
-  '@fangorn-network/fetch@2026.3.31(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(ethers@5.7.2)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.24.3)':
+  '@fangorn-network/fetch@2026.3.3-1.1(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(ethers@5.7.2)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.24.3)':
     dependencies:
       '@fangorn-network/sdk': 2026.3.28(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.24.3)
       '@semaphore-protocol/identity': 4.14.2
