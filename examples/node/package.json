@@ -10,7 +10,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@fangorn-network/sdk": "^2026.3.27"
+    "@fangorn-network/sdk": "^2026.3.28",
+    "@fangorn-network/fetch": "^2026.3.31"
   },
   "devDependencies": {
     "viem": "catalog:"
