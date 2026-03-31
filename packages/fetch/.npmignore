@@ -1,0 +1,6 @@
+# Ignore source and config, but allow dist
+src/
+node_modules/
+tsconfig.json
+tsdown.config.ts
+.gitignore
