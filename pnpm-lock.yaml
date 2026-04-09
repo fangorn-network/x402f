@@ -7,8 +7,8 @@ settings:
 catalogs:
   default:
     '@fangorn-network/sdk':
-      specifier: ^2026.3.28
-      version: 2026.3.28
+      specifier: 2026.4.0-8.dev
+      version: 2026.4.0-8.dev
     '@x402/core':
       specifier: ^2.5.0
       version: 2.6.0
@@ -48,11 +48,11 @@ importers:
   examples/node:
     dependencies:
       '@fangorn-network/fetch':
-        specifier: 2026.3.3-1.1
-        version: 2026.3.3-1.1(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(ethers@5.7.2)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.24.3)
+        specifier: link:../../packages/fetch
+        version: link:../../packages/fetch
       '@fangorn-network/sdk':
-        specifier: ^2026.3.28
-        version: 2026.3.28(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.24.3)
+        specifier: 2026.4.0-8.dev
+        version: 2026.4.0-8.dev(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.24.3)
     devDependencies:
       viem:
         specifier: 'catalog:'
@@ -62,7 +62,7 @@ importers:
     dependencies:
       '@fangorn-network/sdk':
         specifier: 'catalog:'
-        version: 2026.3.28(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.25.76)
+        version: 2026.4.0-8.dev(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.25.76)
       '@semaphore-protocol/identity':
         specifier: ^4.14.2
         version: 4.14.2
@@ -95,22 +95,19 @@ importers:
   packages/fetch:
     dependencies:
       '@fangorn-network/sdk':
-        specifier: file:../../../fangorn
-        version: file:../fangorn(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.25.76)
+        specifier: 'catalog:'
+        version: 2026.4.0-8.dev(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.25.76)
       '@semaphore-protocol/identity':
         specifier: ^4.14.2
         version: 4.14.2
       '@x402/core':
-        specifier: ^2.5.0
+        specifier: 'catalog:'
         version: 2.6.0
       '@x402/evm':
-        specifier: ^2.5.0
+        specifier: 'catalog:'
         version: 2.6.0(ethers@6.16.0)(typescript@5.9.3)
-      '@x402/express':
-        specifier: ^2.5.0
-        version: 2.9.0(ethers@6.16.0)(express@5.2.1)(typescript@5.9.3)
       '@x402/fetch':
-        specifier: ^2.5.0
+        specifier: 'catalog:'
         version: 2.6.0(typescript@5.9.3)
     devDependencies:
       tsdown:
@@ -723,16 +720,8 @@ packages:
   '@ethersproject/wordlists@5.8.0':
     resolution: {integrity: sha512-2df9bbXicZws2Sb5S6ET493uJ0Z84Fjr3pC4tu/qlnZERibZCeUVuqdtt+7Tv9xxhUxHoIekIA7avrKUWHrezg==}
 
-  '@fangorn-network/fetch@2026.3.3-1.1':
-    resolution: {integrity: sha512-r81u1wFU1TalhFbvxtLk+1wnkX5XImuaP9y3s0ipobfNmX6K8fBhBmn9DCbTJNQKISYwqIeL8NfpC3FEfqU1Yw==}
-
-  '@fangorn-network/sdk@2026.3.28':
-    resolution: {integrity: sha512-8altunhze6tNyj+xLBLogtz3JrbL57+C+CNx3QPwt84FmyVlENQWSTveRLdd6NRlGn6Beooikk3eOsfMv+I2lA==}
-    engines: {node: '>=20.19.0'}
-    hasBin: true
-
-  '@fangorn-network/sdk@file:../fangorn':
-    resolution: {directory: ../fangorn, type: directory}
+  '@fangorn-network/sdk@2026.4.0-8.dev':
+    resolution: {integrity: sha512-WDtAdcsl5mZv3nJ3CibsnjQPYF8/8xaX3UM8hnsnEZpre6uQJXGdDtW8NpBhFPGlm/Do3NhFJDWuMswaIHs/Bg==}
     engines: {node: '>=20.19.0'}
     hasBin: true
 
@@ -1926,26 +1915,11 @@ packages:
   '@x402/core@2.6.0':
     resolution: {integrity: sha512-ISC/JeVss6xlKvor2rp18tJf9K5OQlIDDfZW1VZJQGDI2F4gy+HWxxkFfcQalCsPp4YUlwqh0YOkUxP+LTZWVg==}
 
-  '@x402/core@2.9.0':
-    resolution: {integrity: sha512-IqPITHYx6XHlgLPtparuKKwoB+3wQdgt0F+WUH1e3WHMeiWdp+xTtQDy+6yOKuObNFI1S1iVbQFz0GivR/Vv3w==}
-
   '@x402/evm@2.6.0':
     resolution: {integrity: sha512-wPkNHf483gie1Up2sJSvERnW+VIEvMoT1KRXr09wSoSWgelglsJm+ug3gPPXKnT3C6AcmNAKZ12rBnu9Paff7g==}
 
-  '@x402/express@2.9.0':
-    resolution: {integrity: sha512-E236c188p7rkAILnzdd19FQZuTEOM9+DP/y/FG4B0oawiBXx5FGR5ez7EUKCG7V7FxXsGvMEjUFMJ0BjrQx8yw==}
-    peerDependencies:
-      '@x402/paywall': ^2.9.0
-      express: ^4.0.0 || ^5.0.0
-    peerDependenciesMeta:
-      '@x402/paywall':
-        optional: true
-
   '@x402/extensions@2.6.0':
     resolution: {integrity: sha512-aLY9xAOOiRLKDN9HT2r9TYUXbD+IsoBces9qPZNVJGO2TBi2rfmbIBc3pcKCtWKn3iTvG2QFr3gpOFdpJRzqww==}
-
-  '@x402/extensions@2.9.0':
-    resolution: {integrity: sha512-Fk7MJFWSQtsRGGZcNpgwv8V6IG38USNciA5ImkF0InceWDfjMBq6b8GmksM+cVHAXQsMQYxw3HV8uhfwTPEGAQ==}
 
   '@x402/fetch@2.6.0':
     resolution: {integrity: sha512-OnHXw/mv76ig4UBJEgfQIWHSWcrgIOT2i8RxEuGl12QtaYwSgBcgDub2GdllL/iIB9OneM1m0UWlrPh23JdVjQ==}
@@ -6331,42 +6305,7 @@ snapshots:
       '@ethersproject/properties': 5.8.0
       '@ethersproject/strings': 5.8.0
 
-  '@fangorn-network/fetch@2026.3.3-1.1(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(ethers@5.7.2)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.24.3)':
-    dependencies:
-      '@fangorn-network/sdk': 2026.3.28(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.24.3)
-      '@semaphore-protocol/identity': 4.14.2
-      '@x402/core': 2.6.0
-      '@x402/evm': 2.6.0(ethers@5.7.2)(typescript@5.9.3)
-      '@x402/fetch': 2.6.0(typescript@5.9.3)
-    transitivePeerDependencies:
-      - '@bufbuild/protobuf'
-      - '@grpc/grpc-js'
-      - '@sinclair/typebox'
-      - '@tanstack/query-core'
-      - '@types/react'
-      - '@types/snarkjs'
-      - arktype
-      - bufferutil
-      - debug
-      - encoding
-      - ethers
-      - express
-      - graphql
-      - immer
-      - openapi-types
-      - react
-      - react-dom
-      - react-native
-      - react-native-b4a
-      - supports-color
-      - tslib
-      - typescript
-      - use-sync-external-store
-      - utf-8-validate
-      - valibot
-      - zod
-
-  '@fangorn-network/sdk@2026.3.28(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.24.3)':
+  '@fangorn-network/sdk@2026.4.0-8.dev(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.24.3)':
     dependencies:
       '@a2a-js/sdk': 0.3.11(express@5.2.1)
       '@clack/prompts': 1.1.0
@@ -6413,54 +6352,7 @@ snapshots:
       - valibot
       - zod
 
-  '@fangorn-network/sdk@2026.3.28(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.25.76)':
-    dependencies:
-      '@a2a-js/sdk': 0.3.11(express@5.2.1)
-      '@clack/prompts': 1.1.0
-      '@lit-protocol/access-control-conditions': 8.0.2(typescript@5.9.3)
-      '@lit-protocol/auth': 8.2.3(@sinclair/typebox@0.34.48)(encoding@0.1.13)(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))
-      '@lit-protocol/auth-helpers': 8.2.1(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))
-      '@lit-protocol/lit-client': 8.3.1(@sinclair/typebox@0.34.48)(encoding@0.1.13)(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))
-      '@lit-protocol/networks': 8.4.1(@sinclair/typebox@0.34.48)(react@19.2.4)(typescript@5.9.3)(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))
-      '@semaphore-protocol/group': 4.14.2
-      '@semaphore-protocol/identity': 4.14.2
-      '@semaphore-protocol/proof': 4.14.2(@semaphore-protocol/group@4.14.2)(@semaphore-protocol/identity@4.14.2)(@types/snarkjs@0.7.9)(commander@14.0.3)
-      '@storacha/client': 2.1.3(encoding@0.1.13)
-      agent0-sdk: 1.6.0(encoding@0.1.13)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(typescript@5.9.3)(zod@3.25.76)
-      commander: 14.0.3
-      dotenv: 17.3.1
-      ethers: 6.16.0
-      pinata: 2.5.5(react@19.2.4)
-      solc: 0.8.34
-      viem: 2.47.1(typescript@5.9.3)(zod@3.25.76)
-    transitivePeerDependencies:
-      - '@bufbuild/protobuf'
-      - '@grpc/grpc-js'
-      - '@sinclair/typebox'
-      - '@tanstack/query-core'
-      - '@types/react'
-      - '@types/snarkjs'
-      - arktype
-      - bufferutil
-      - debug
-      - encoding
-      - express
-      - graphql
-      - immer
-      - openapi-types
-      - react
-      - react-dom
-      - react-native
-      - react-native-b4a
-      - supports-color
-      - tslib
-      - typescript
-      - use-sync-external-store
-      - utf-8-validate
-      - valibot
-      - zod
-
-  '@fangorn-network/sdk@file:../fangorn(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.25.76)':
+  '@fangorn-network/sdk@2026.4.0-8.dev(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.25.76)':
     dependencies:
       '@a2a-js/sdk': 0.3.11(express@5.2.1)
       '@clack/prompts': 1.1.0
@@ -9169,22 +9061,6 @@ snapshots:
     dependencies:
       zod: 3.25.76
 
-  '@x402/core@2.9.0':
-    dependencies:
-      zod: 3.25.76
-
-  '@x402/evm@2.6.0(ethers@5.7.2)(typescript@5.9.3)':
-    dependencies:
-      '@x402/core': 2.6.0
-      '@x402/extensions': 2.6.0(ethers@5.7.2)(typescript@5.9.3)
-      viem: 2.46.3(typescript@5.9.3)(zod@3.25.76)
-      zod: 3.25.76
-    transitivePeerDependencies:
-      - bufferutil
-      - ethers
-      - typescript
-      - utf-8-validate
-
   '@x402/evm@2.6.0(ethers@6.16.0)(typescript@5.9.3)':
     dependencies:
       '@x402/core': 2.6.0
@@ -9197,56 +9073,11 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@x402/express@2.9.0(ethers@6.16.0)(express@5.2.1)(typescript@5.9.3)':
-    dependencies:
-      '@x402/core': 2.9.0
-      '@x402/extensions': 2.9.0(ethers@6.16.0)(typescript@5.9.3)
-      express: 5.2.1
-      viem: 2.47.1(typescript@5.9.3)(zod@3.25.76)
-      zod: 3.25.76
-    transitivePeerDependencies:
-      - bufferutil
-      - ethers
-      - typescript
-      - utf-8-validate
-
-  '@x402/extensions@2.6.0(ethers@5.7.2)(typescript@5.9.3)':
-    dependencies:
-      '@scure/base': 1.2.6
-      '@x402/core': 2.6.0
-      ajv: 8.18.0
-      siwe: 2.3.2(ethers@5.7.2)
-      tweetnacl: 1.0.3
-      viem: 2.47.1(typescript@5.9.3)(zod@3.25.76)
-      zod: 3.25.76
-    transitivePeerDependencies:
-      - bufferutil
-      - ethers
-      - typescript
-      - utf-8-validate
-
   '@x402/extensions@2.6.0(ethers@6.16.0)(typescript@5.9.3)':
     dependencies:
       '@scure/base': 1.2.6
       '@x402/core': 2.6.0
       ajv: 8.18.0
-      siwe: 2.3.2(ethers@6.16.0)
-      tweetnacl: 1.0.3
-      viem: 2.47.1(typescript@5.9.3)(zod@3.25.76)
-      zod: 3.25.76
-    transitivePeerDependencies:
-      - bufferutil
-      - ethers
-      - typescript
-      - utf-8-validate
-
-  '@x402/extensions@2.9.0(ethers@6.16.0)(typescript@5.9.3)':
-    dependencies:
-      '@noble/curves': 1.9.7
-      '@scure/base': 1.2.6
-      '@x402/core': 2.9.0
-      ajv: 8.18.0
-      jose: 5.10.0
       siwe: 2.3.2(ethers@6.16.0)
       tweetnacl: 1.0.3
       viem: 2.47.1(typescript@5.9.3)(zod@3.25.76)

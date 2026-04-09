@@ -58,15 +58,11 @@ export class FangornX402Middleware {
     }
 
     static async create(options: FangornMiddlewareConfig): Promise<FangornX402Middleware> {
-        const walletClient = createWalletClient({
-            account: privateKeyToAccount(options.privateKey),
-            chain: options.config.chain,
-            transport: http(options.config.rpcUrl),
-        });
-
+        const walletClient = options.walletClient
         // we only need to read from storage
         const fangorn = await Fangorn.create({
-            privateKey: options.privateKey,
+            // privateKey: options.privateKey,
+            walletClient,
             encryption: { lit: true },
             config: options.config,
             domain: options.domain,
@@ -112,7 +108,7 @@ export class FangornX402Middleware {
         const facilitatorAddress = "0x147c24c5Ea2f1EE1ac42AD16820De23bBba45Ef6" as Address;
 
         const {
-            privateKey,
+            // privateKey,
             owner,
             schemaName,
             tag,
@@ -135,7 +131,8 @@ export class FangornX402Middleware {
             // the client pays the facilitator (prepares a signed transferWithAuthorization call)
             const clientPayment = await this.fangorn.consumer.prepareRegister({
                 // TODO: refactor field in Fangorn
-                burnerPrivateKey: privateKey,
+                // burnerPrivateKey: privateKey,
+                walletClient: this.walletClient,
                 paymentRecipient: facilitatorAddress,
                 amount: price,
                 usdcAddress: usdcContractAddress,

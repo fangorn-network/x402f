@@ -2,7 +2,8 @@ import { AppConfig } from "@fangorn-network/sdk";
 import { Address, Hex } from "viem";
 
 export interface FangornMiddlewareConfig {
-    privateKey: Hex,
+    // privateKey: Hex,
+    walletClient: WalletClient;
     config: AppConfig;
     usdcContractAddress: Address;
     usdcDomainName: string;

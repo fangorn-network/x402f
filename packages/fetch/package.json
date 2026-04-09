@@ -1,6 +1,6 @@
 {
   "name": "@fangorn-network/fetch",
-  "version": "2026.04.08",
+  "version": "2026.04.09.dev",
   "description": "",
   "type": "module",
   "main": "./dist/index.js",
@@ -27,12 +27,11 @@
     "access": "public"
   },
   "dependencies": {
-    "@fangorn-network/sdk": "file:../../../fangorn",
+    "@fangorn-network/sdk": "catalog:",
     "@semaphore-protocol/identity": "^4.14.2",
-    "@x402/core": "^2.5.0",
-    "@x402/evm": "^2.5.0",
-    "@x402/express": "^2.5.0",
-    "@x402/fetch": "^2.5.0"
+    "@x402/core": "catalog:",
+    "@x402/evm": "catalog:",
+    "@x402/fetch": "catalog:"
   },
   "devDependencies": {
     "tsdown": "^0.21.1",

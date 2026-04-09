@@ -1,7 +1,7 @@
 {
   "name": "node",
   "type": "module",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -10,8 +10,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@fangorn-network/fetch": "2026.3.3-1.1",
-    "@fangorn-network/sdk": "^2026.3.28"
+    "@fangorn-network/fetch": "link:../../packages/fetch",
+    "@fangorn-network/sdk": "2026.4.0-8.dev"
   },
   "devDependencies": {
     "viem": "catalog:"
