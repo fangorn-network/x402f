@@ -77,10 +77,9 @@ async function createFacilitator(
         getCode: (args: { address: `0x${string}` }) => viemClient.getCode(args),
     });
 
-    // the fangorn instance
+    // the fangorn instance (read only)
     const fangorn = await Fangorn.create({
-        privateKey,
-        storage: { storacha: { readOnly: true } },
+        walletClient: viemClient,
         encryption: { lit: true },
         config,
         domain: "localhost",

@@ -1,4 +1,4 @@
-import { createPublicClient, createWalletClient, encodePacked, http, keccak256, toHex, type Address, type Hex, type WalletClient } from "viem";
+import { createPublicClient, createWalletClient, encodePacked, http, keccak256, toBytes, toHex, type Address, type Hex, type WalletClient } from "viem";
 import { ExactEvmScheme } from "@x402/evm/exact/client";
 import { type AppConfig, Fangorn } from "@fangorn-network/sdk";
 import { wrapFetchWithPaymentFromConfig } from "@x402/fetch";
@@ -61,7 +61,6 @@ export class FangornX402Middleware {
         const walletClient = options.walletClient
         // we only need to read from storage
         const fangorn = await Fangorn.create({
-            // privateKey: options.privateKey,
             walletClient,
             encryption: { lit: true },
             config: options.config,
@@ -78,13 +77,13 @@ export class FangornX402Middleware {
             },
         );
 
-        // Derive identity + stealth key (stable across sessions)
-        const identity = new Identity(options.privateKey);
-        // ERC-5489134589071234
+        // Derive identity + stealth key
+        const identitySecret = await deriveIdentitySecret(walletClient);
+        const identity = new Identity(identitySecret);
         const stealthKey = keccak256(
             encodePacked(
-                ["string", "bytes32"],
-                ["fangorn:stealth:", toHex(identity.secretScalar, { size: 32 })],
+                ['string', 'bytes32'],
+                ['fangorn:stealth:', toHex(identity.secretScalar, { size: 32 })],
             )
         ) as Hex;
 
@@ -108,7 +107,6 @@ export class FangornX402Middleware {
         const facilitatorAddress = "0x147c24c5Ea2f1EE1ac42AD16820De23bBba45Ef6" as Address;
 
         const {
-            // privateKey,
             owner,
             schemaName,
             tag,
@@ -130,8 +128,6 @@ export class FangornX402Middleware {
 
             // the client pays the facilitator (prepares a signed transferWithAuthorization call)
             const clientPayment = await this.fangorn.consumer.prepareRegister({
-                // TODO: refactor field in Fangorn
-                // burnerPrivateKey: privateKey,
                 walletClient: this.walletClient,
                 paymentRecipient: facilitatorAddress,
                 amount: price,
@@ -249,6 +245,8 @@ export class FangornX402Middleware {
         }
     }
 
+    // helpers
+    // todo: unsafe
     getAddress(): Hex {
         return this.walletClient.account!.address;
     }
@@ -256,4 +254,13 @@ export class FangornX402Middleware {
     getPaymentFetch(): typeof fetch {
         return this.fetchWithPayment;
     }
+}
+
+async function deriveIdentitySecret(walletClient: WalletClient): Promise<Hex> {
+    const message = 'fangorn:identity:v1'
+    const signature = await walletClient.signMessage({
+        account: walletClient.account!,
+        message,
+    })
+    return keccak256(toBytes(signature))
 }

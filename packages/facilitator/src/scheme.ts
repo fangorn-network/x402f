@@ -7,9 +7,10 @@ import {
     type Network,
 } from "@x402/core/types";
 import { type FacilitatorEvmSigner } from "@x402/evm";
-import { Fangorn } from "@fangorn-network/sdk";
+import { Fangorn, FangornConfig } from "@fangorn-network/sdk";
 import { createPublicClient, createWalletClient, http, type Hex } from "viem";
 import { type Address, generatePrivateKey, privateKeyToAccount } from "viem/accounts";
+import { arbitrumSepolia } from "viem/chains";
 
 const ERC20_TRANSFER_ABI = [{
     name: "transfer",
@@ -54,7 +55,7 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
     }
 
     async verify(
-        payload: PaymentPayload, 
+        payload: PaymentPayload,
         requirements: PaymentRequirements
     ): Promise<VerifyResponse> {
         try {
@@ -67,13 +68,19 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
 
             // facilitator funds fresh anonymous burner
             const burnerKey = generatePrivateKey();
-            const burnerAddress = privateKeyToAccount(burnerKey).address;
-            await this.transferUsdc(burnerAddress, price);
+            const burnerAccount = privateKeyToAccount(burnerKey);
+            await this.transferUsdc(burnerAccount.address, price);
+
+            const burnerWallet = await createWalletClient({
+                account: burnerAccount,
+                chain: arbitrumSepolia,
+                transport: http(FangornConfig.ArbitrumSepolia.rpcUrl)
+            });
 
             // burner prepares ERC-3009 to resource owner
             const preparedRegister = await this.fangorn.getSettlementRegistry()
                 .prepareTransferWithAuth({
-                    burnerPrivateKey: burnerKey,
+                    walletClient: burnerWallet,
                     paymentRecipient: requirements.payTo as Address,
                     amount: price,
                     usdcAddress: this.usdcAddress,
@@ -112,7 +119,7 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
 
             if (!extra?.preparedSettle) throw new Error("Missing preparedSettle");
             if (!extra?.resourceId) throw new Error("Missing resourceId");
-            
+
             // claim membership in semaphore group 
             const { hash, nullifier } = await this.fangorn.getSettlementRegistry().settle({
                 relayerPrivateKey: this.privateKey,

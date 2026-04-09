@@ -1,9 +1,10 @@
 import { AppConfig } from "@fangorn-network/sdk";
-import { Address, Hex } from "viem";
+import { Identity } from "@semaphore-protocol/identity";
+import { Address, Hex, WalletClient } from "viem";
 
 export interface FangornMiddlewareConfig {
-    // privateKey: Hex,
     walletClient: WalletClient;
+    identity: Identity;
     config: AppConfig;
     usdcContractAddress: Address;
     usdcDomainName: string;
@@ -12,7 +13,6 @@ export interface FangornMiddlewareConfig {
 }
 
 export interface FetchResourceOptions {
-    privateKey: Hex,
     owner: Address,
     schemaName: string;
     tag: string;

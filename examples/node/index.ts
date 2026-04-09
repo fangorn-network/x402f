@@ -20,7 +20,9 @@ async function nodeExample() {
 
     const privateKey = getEnv("EVM_PRIVATE_KEY") as Hex;
     const resourceServerUrl = getEnv("RESOURCE_SERVER_URL");
+
     const domain = "localhost:3000";
+
     const walletClient = await createWalletClient({
         account: privateKeyToAccount(privateKey),
         chain: arbitrumSepolia,
@@ -28,7 +30,6 @@ async function nodeExample() {
     });
 
     const middleware = await FangornX402Middleware.create({
-        // privateKey,
         walletClient,
         config,
         usdcContractAddress: "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d",
@@ -42,7 +43,7 @@ async function nodeExample() {
     const tag = "scon-locura-1775682250352";
 
     const result = await middleware.fetchResource({
-        privateKey,
+        walletClient,
         owner,
         schemaName,
         tag,
@@ -50,7 +51,7 @@ async function nodeExample() {
     });
 
     if (result.success) {
-        console.log("Decrypted result:", JSON.stringify(result));
+        console.log("Decrypted result?", JSON.stringify(result.success));
         process.exit(0)
     } else {
         console.error("Failed:", result.error);
