@@ -67,7 +67,6 @@ export class FangornX402Middleware {
         // we only need to read from storage
         const fangorn = await Fangorn.create({
             privateKey: options.privateKey,
-            storage: { storacha: { readOnly: true } },
             encryption: { lit: true },
             config: options.config,
             domain: options.domain,

@@ -30,8 +30,8 @@ async function nodeExample() {
     });
 
     const owner = "0x147c24c5Ea2f1EE1ac42AD16820De23bBba45Ef6" as Address;
-    const schemaName = "noagent-fangorn.test.music.v0";
-    const tag = "test";
+    const schemaName = "fangorn.music.demo.v1";
+    const tag = "scon-locura-1775682250352";
 
     const result = await middleware.fetchResource({
         privateKey,
