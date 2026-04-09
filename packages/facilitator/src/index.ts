@@ -114,6 +114,11 @@ app.get("/supported", async (req, res) => {
   }
 });
 
+// TODO: make this configurable
+app.get('/fee', (req, res) => {
+    res.json({ feePercent: 2.5 })
+})
+
 const port = parseInt(process.env.FACILITATOR_PORT!) || 0;
 
 // Start the server

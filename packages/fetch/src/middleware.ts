@@ -115,7 +115,6 @@ export class FangornX402Middleware {
         } = options;
 
         try {
-            // resolve schema
             let schemaId: Hex;
             try {
                 schemaId = await this.fangorn.getSchemaRegistry().schemaId(schemaName);
@@ -124,35 +123,68 @@ export class FangornX402Middleware {
             }
 
             const resourceId = SettlementRegistry.deriveResourceId(owner, schemaId, tag);
+
+            //TODO: move to new function
+            {
+                // if already settled, skip payment and decrypt directly
+                const alreadySettled = await this.fangorn.getSettlementRegistry().isSettled(
+                    this.stealthAddress,
+                    resourceId,
+                )
+
+                if (alreadySettled) {
+                    const stealthWalletClient = createWalletClient({
+                        account: privateKeyToAccount(this.stealthKey),
+                        chain: this.fetchConfig.config.chain,
+                        transport: http(this.fetchConfig.config.rpcUrl),
+                    })
+                    const data = await this.fangorn.consumer.decrypt({
+                        owner,
+                        schemaId,
+                        tag,
+                        field,
+                        walletClient: stealthWalletClient,
+                        nullifierHash: 0n,
+                        identity: this.identity,
+                        skipSettlementCheck: true,
+                    })
+                    return { success: true, data, dataString: new TextDecoder().decode(data) }
+                }
+
+            }
+
             const price = await this.fangorn.getSettlementRegistry().getPrice(resourceId);
 
-            // the client pays the facilitator (prepares a signed transferWithAuthorization call)
+            // fetch facilitator fee rate
+            const feeRes = await fetch(`${baseUrl}/fee`)
+            const { feePercent } = await feeRes.json()
+            const feeBps = BigInt(Math.round(feePercent * 100))
+            const fee = (price * feeBps) / 10000n
+            const totalAmount = price + fee
+
+            const authHeaders = authToken
+                ? { "Content-Type": "application/json", "Authorization": `Bearer ${authToken}` }
+                : { "Content-Type": "application/json" };
+
+            // sign for price + fee
             const clientPayment = await this.fangorn.consumer.prepareRegister({
                 walletClient: this.walletClient,
                 paymentRecipient: facilitatorAddress,
-                amount: price,
+                amount: totalAmount,
                 usdcAddress: usdcContractAddress,
                 usdcDomainName,
                 usdcDomainVersion: "2",
             });
 
-            // can be empty
-            const authHeaders = authToken
-                ? { "Content-Type": "application/json", "Authorization": `Bearer ${authToken}` }
-                : { "Content-Type": "application/json" };
-
-            // get the response from the verify call directly and handle it
             const verifyRes = await fetch(`${baseUrl}/verify`, {
                 method: "POST",
                 headers: authHeaders,
                 body: JSON.stringify({
-                    paymentPayload: {
-                        x402Version: 2,
-                    },
+                    paymentPayload: { x402Version: 2 },
                     paymentRequirements: {
                         scheme: "exact",
                         network: `eip155:${this.fetchConfig.config.caip2}`,
-                        amount: price.toString(),
+                        amount: totalAmount.toString(),
                         asset: usdcContractAddress,
                         payTo: facilitatorAddress,
                         extra: {
@@ -168,30 +200,25 @@ export class FangornX402Middleware {
             });
 
             const verifyBody = await verifyRes.json();
-
             if (!verifyBody.isValid) {
                 return { success: false, error: `Verify failed: ${verifyBody.invalidReason}` };
             }
 
-            // valid => isRegistered == true => prepare settle (builds semaphore proof)
             const preparedSettle = await this.fangorn.consumer.prepareSettle({
                 resourceId,
                 identity: this.identity,
                 stealthAddress: this.stealthAddress,
             });
 
-            // settle
             const settleRes = await fetch(`${baseUrl}/settle`, {
                 method: "POST",
                 headers: authHeaders,
                 body: JSON.stringify({
-                    paymentPayload: {
-                        x402Version: 2,
-                    },
+                    paymentPayload: { x402Version: 2 },
                     paymentRequirements: {
                         scheme: "exact",
                         network: `eip155:${this.fetchConfig.config.caip2}`,
-                        amount: price.toString(),
+                        amount: totalAmount.toString(),
                         asset: usdcContractAddress,
                         payTo: facilitatorAddress,
                         extra: {
@@ -206,14 +233,12 @@ export class FangornX402Middleware {
             });
 
             const settleBody = await settleRes.json();
-
             if (!settleBody.success) {
                 return { success: false, error: `Settle failed: ${settleBody.errorReason}` };
             }
 
             const nullifierHash = BigInt(settleBody.extensions.nullifier);
 
-            // decrypt
             const stealthWalletClient = createWalletClient({
                 account: privateKeyToAccount(this.stealthKey),
                 chain: this.fetchConfig.config.chain,
