@@ -4,7 +4,6 @@ import { Address, Hex, WalletClient } from "viem";
 
 export interface FangornMiddlewareConfig {
     walletClient: WalletClient;
-    identity: Identity;
     config: AppConfig;
     usdcContractAddress: Address;
     usdcDomainName: string;
@@ -15,7 +14,7 @@ export interface FangornMiddlewareConfig {
 export interface FetchResourceOptions {
     owner: Address,
     schemaName: string;
-    tag: string;
+    name: string;
     baseUrl: string;
     authToken?: string;
 }

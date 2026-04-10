@@ -7,6 +7,7 @@ import { SettlementRegistry } from "@fangorn-network/sdk/lib/registries/settleme
 import { privateKeyToAccount } from "viem/accounts";
 import { Identity } from "@semaphore-protocol/identity";
 import { FangornMiddlewareConfig, type FetchResourceOptions, type FetchResourceResult } from "./types.js";
+import { DataSourceRegistry } from "@fangorn-network/sdk/lib/registries/datasource-registry/index.js";
 
 function createSignerFromWallet(walletClient: WalletClient, config: AppConfig): ClientEvmSigner {
     const account = walletClient.account;
@@ -109,7 +110,7 @@ export class FangornX402Middleware {
         const {
             owner,
             schemaName,
-            tag,
+            name,
             baseUrl = "http://127.0.0.1:30333",
             authToken,
         } = options;
@@ -122,7 +123,7 @@ export class FangornX402Middleware {
                 throw new Error(`Schema "${schemaName}" not found on-chain.`);
             }
 
-            const resourceId = SettlementRegistry.deriveResourceId(owner, schemaId, tag);
+            const resourceId = DataSourceRegistry.resourceIdLocal(owner, schemaId, name);
 
             //TODO: move to new function
             {
@@ -141,7 +142,7 @@ export class FangornX402Middleware {
                     const data = await this.fangorn.consumer.decrypt({
                         owner,
                         schemaId,
-                        tag,
+                        name,
                         field,
                         walletClient: stealthWalletClient,
                         nullifierHash: 0n,
@@ -191,6 +192,7 @@ export class FangornX402Middleware {
                             name: usdcDomainName,
                             version: "2",
                             resourceId,
+                            resourcePrice: price.toString(), // raw price, before fee
                             clientPayment,
                             identityCommitment: this.identity.commitment.toString(),
                             stealthAddress: this.stealthAddress,
@@ -248,7 +250,7 @@ export class FangornX402Middleware {
             const data = await this.fangorn.consumer.decrypt({
                 owner,
                 schemaId,
-                tag,
+                name,
                 field,
                 walletClient: stealthWalletClient,
                 nullifierHash,

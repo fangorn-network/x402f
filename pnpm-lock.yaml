@@ -7,8 +7,8 @@ settings:
 catalogs:
   default:
     '@fangorn-network/sdk':
-      specifier: 2026.4.0-8.dev
-      version: 2026.4.0-8.dev
+      specifier: 2026.4.10
+      version: 2026.4.10
     '@x402/core':
       specifier: ^2.5.0
       version: 2.6.0
@@ -51,8 +51,11 @@ importers:
         specifier: link:../../packages/fetch
         version: link:../../packages/fetch
       '@fangorn-network/sdk':
-        specifier: 2026.4.0-8.dev
-        version: 2026.4.0-8.dev(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.24.3)
+        specifier: 2026.4.10
+        version: 2026.4.10(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.24.3)
+      '@semaphore-protocol/identity':
+        specifier: ^4.14.2
+        version: 4.14.2
     devDependencies:
       viem:
         specifier: 'catalog:'
@@ -62,7 +65,7 @@ importers:
     dependencies:
       '@fangorn-network/sdk':
         specifier: 'catalog:'
-        version: 2026.4.0-8.dev(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.25.76)
+        version: 2026.4.10(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.25.76)
       '@semaphore-protocol/identity':
         specifier: ^4.14.2
         version: 4.14.2
@@ -96,7 +99,7 @@ importers:
     dependencies:
       '@fangorn-network/sdk':
         specifier: 'catalog:'
-        version: 2026.4.0-8.dev(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.25.76)
+        version: 2026.4.10(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.25.76)
       '@semaphore-protocol/identity':
         specifier: ^4.14.2
         version: 4.14.2
@@ -720,8 +723,8 @@ packages:
   '@ethersproject/wordlists@5.8.0':
     resolution: {integrity: sha512-2df9bbXicZws2Sb5S6ET493uJ0Z84Fjr3pC4tu/qlnZERibZCeUVuqdtt+7Tv9xxhUxHoIekIA7avrKUWHrezg==}
 
-  '@fangorn-network/sdk@2026.4.0-8.dev':
-    resolution: {integrity: sha512-WDtAdcsl5mZv3nJ3CibsnjQPYF8/8xaX3UM8hnsnEZpre6uQJXGdDtW8NpBhFPGlm/Do3NhFJDWuMswaIHs/Bg==}
+  '@fangorn-network/sdk@2026.4.10':
+    resolution: {integrity: sha512-kIfkxzm8nj6xsrexcBG8iPslpFF1TMBWruXB3UNXWML5MYu/VXgVK2dsBPHozd5ohAKie0kA9xFHivC571czXg==}
     engines: {node: '>=20.19.0'}
     hasBin: true
 
@@ -6305,7 +6308,7 @@ snapshots:
       '@ethersproject/properties': 5.8.0
       '@ethersproject/strings': 5.8.0
 
-  '@fangorn-network/sdk@2026.4.0-8.dev(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.24.3)':
+  '@fangorn-network/sdk@2026.4.10(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.24.3)':
     dependencies:
       '@a2a-js/sdk': 0.3.11(express@5.2.1)
       '@clack/prompts': 1.1.0
@@ -6352,7 +6355,7 @@ snapshots:
       - valibot
       - zod
 
-  '@fangorn-network/sdk@2026.4.0-8.dev(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.25.76)':
+  '@fangorn-network/sdk@2026.4.10(@sinclair/typebox@0.34.48)(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.1)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)(typescript@5.9.3)(zod@3.25.76)':
     dependencies:
       '@a2a-js/sdk': 0.3.11(express@5.2.1)
       '@clack/prompts': 1.1.0

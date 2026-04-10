@@ -84,13 +84,12 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
             if (!extra?.identityCommitment) return { isValid: false, invalidReason: "Missing identityCommitment" };
             if (!extra?.resourceId) return { isValid: false, invalidReason: "Missing resourceId" };
             if (!extra?.clientPayment) return { isValid: false, invalidReason: "Missing clientPayment" };
-
             const cp = extra.clientPayment;
-            const price = BigInt(requirements.amount);
 
             const facilitatorAddress = privateKeyToAccount(this.privateKey).address;
 
             // pull price + fee from buyer
+            const price = BigInt(extra.resourcePrice);
             const feeBps = BigInt(Math.round(this.feePercent * 100))
             const fee = (price * feeBps) / 10000n
             const totalDue = price + fee

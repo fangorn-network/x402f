@@ -1,0 +1,20 @@
+{
+    "name": "test",
+    "fields": {
+        "title": "test",
+        "artist": "test",
+        "album": "test",
+        "trackNumber": "test",
+        "genre": "test",
+        "duration": "test",
+        "audio": {
+            "data": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "fileType": "test"
+        }
+    }
+}

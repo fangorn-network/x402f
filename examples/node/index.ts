@@ -29,8 +29,10 @@ async function nodeExample() {
         transport: http(FangornConfig.ArbitrumSepolia.rpcUrl)
     });
 
+
+
     const middleware = await FangornX402Middleware.create({
-        walletClient,
+        walletClient: walletClient as any,
         config,
         usdcContractAddress: "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d",
         usdcDomainName: "USD Coin",
@@ -39,14 +41,13 @@ async function nodeExample() {
     });
 
     const owner = "0x147c24c5Ea2f1EE1ac42AD16820De23bBba45Ef6" as Address;
-    const schemaName = "fangorn.music.demo.v1";
-    const tag = "scon-locura-1775682250352";
+    const schemaName = "fangorn.music.demo.v0";
+    const name = "test";
 
     const result = await middleware.fetchResource({
-        walletClient,
         owner,
         schemaName,
-        tag,
+        name,
         baseUrl: resourceServerUrl,
     });
 
