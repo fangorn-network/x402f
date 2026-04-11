@@ -20,7 +20,7 @@ gcloud run deploy facilitator \
   --region us-central1 \
   --port 30333 \
   --allow-unauthenticated \
-  --set-env-vars FACILITATOR_EVM_PRIVATE_KEY=0xde0e6c1c331fcd8692463d6ffcf20f9f2e1847264f7a3f578cf54f62f05196cb,CHAIN_RPC_URL=https://sepolia-rollup.arbitrum.io/rpc,FACILITATOR_DOMAIN=http://0.0.0.0,FACILITATOR_PORT=30333,CHAIN="arbitrumSepolia",USDC_DOMAIN_NAME="USD Coin",USDC_CONTRACT_ADDR=0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d,SETTLEMENT_TRACKER_ADDR=0x5e918ba3fe33b0bdc68cd46eb6a77db754edef57,EMAIL=driewmworks@fangorn.network
+  --set-env-vars FACILITATOR_EVM_PRIVATE_KEY=0xde0e6c1c331fcd8692463d6ffcf20f9f2e1847264f7a3f578cf54f62f05196cb,CHAIN_RPC_URL=https://sepolia-rollup.arbitrum.io/rpc,FACILITATOR_DOMAIN=http://0.0.0.0,FACILITATOR_PORT=30333,CHAIN="arbitrumSepolia",USDC_DOMAIN_NAME="USD Coin",USDC_CONTRACT_ADDR=0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d
     
 ```
 
