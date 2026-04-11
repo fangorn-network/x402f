@@ -7,9 +7,10 @@ import {
     type Network,
 } from "@x402/core/types";
 import { type FacilitatorEvmSigner } from "@x402/evm";
-import { Fangorn } from "@fangorn-network/sdk";
+import { Fangorn, FangornConfig } from "@fangorn-network/sdk";
 import { createPublicClient, createWalletClient, http, type Hex } from "viem";
 import { type Address, generatePrivateKey, privateKeyToAccount } from "viem/accounts";
+import { arbitrumSepolia } from "viem/chains";
 
 const ERC20_TRANSFER_ABI = [{
     name: "transfer",
@@ -21,6 +22,24 @@ const ERC20_TRANSFER_ABI = [{
     outputs: [{ type: "bool" }],
     stateMutability: "nonpayable",
 }] as const;
+
+const TRANSFER_WITH_AUTH_ABI = [{
+    name: 'transferWithAuthorization',
+    type: 'function',
+    inputs: [
+        { name: 'from', type: 'address' },
+        { name: 'to', type: 'address' },
+        { name: 'value', type: 'uint256' },
+        { name: 'validAfter', type: 'uint256' },
+        { name: 'validBefore', type: 'uint256' },
+        { name: 'nonce', type: 'bytes32' },
+        { name: 'v', type: 'uint8' },
+        { name: 'r', type: 'bytes32' },
+        { name: 's', type: 'bytes32' },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+}] as const
 
 export type NullifierStore = Map<Hex, bigint>;
 
@@ -39,6 +58,8 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
         private readonly usdcAddress: Hex,
         private readonly network: Network,
         nullifiers: NullifierStore,
+        // default 2.5%
+        private readonly feePercent: number = 2.5,
     ) {
         this.nullifiers = nullifiers;
         const config = fangorn.getConfig();
@@ -54,7 +75,7 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
     }
 
     async verify(
-        payload: PaymentPayload, 
+        payload: PaymentPayload,
         requirements: PaymentRequirements
     ): Promise<VerifyResponse> {
         try {
@@ -62,18 +83,39 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
 
             if (!extra?.identityCommitment) return { isValid: false, invalidReason: "Missing identityCommitment" };
             if (!extra?.resourceId) return { isValid: false, invalidReason: "Missing resourceId" };
+            if (!extra?.clientPayment) return { isValid: false, invalidReason: "Missing clientPayment" };
+            const cp = extra.clientPayment;
 
-            const price = BigInt(requirements.amount);
+            const facilitatorAddress = privateKeyToAccount(this.privateKey).address;
+
+            // pull price + fee from buyer
+            const price = BigInt(extra.resourcePrice);
+            const feeBps = BigInt(Math.round(this.feePercent * 100))
+            const fee = (price * feeBps) / 10000n
+            const totalDue = price + fee
+
+            // client payment must cover price + fee
+            if (BigInt(cp.amount) < totalDue) {
+                return { isValid: false, invalidReason: `Insufficient payment: expected ${totalDue}, got ${cp.amount}` }
+            }
+
+            await this.executeClientPayment(cp, facilitatorAddress);
 
             // facilitator funds fresh anonymous burner
             const burnerKey = generatePrivateKey();
-            const burnerAddress = privateKeyToAccount(burnerKey).address;
-            await this.transferUsdc(burnerAddress, price);
+            const burnerAccount = privateKeyToAccount(burnerKey);
+            await this.transferUsdc(burnerAccount.address, price);
+
+            const burnerWallet = await createWalletClient({
+                account: burnerAccount,
+                chain: arbitrumSepolia,
+                transport: http(FangornConfig.ArbitrumSepolia.rpcUrl)
+            });
 
             // burner prepares ERC-3009 to resource owner
             const preparedRegister = await this.fangorn.getSettlementRegistry()
                 .prepareTransferWithAuth({
-                    burnerPrivateKey: burnerKey,
+                    walletClient: burnerWallet,
                     paymentRecipient: requirements.payTo as Address,
                     amount: price,
                     usdcAddress: this.usdcAddress,
@@ -112,7 +154,7 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
 
             if (!extra?.preparedSettle) throw new Error("Missing preparedSettle");
             if (!extra?.resourceId) throw new Error("Missing resourceId");
-            
+
             // claim membership in semaphore group 
             const { hash, nullifier } = await this.fangorn.getSettlementRegistry().settle({
                 relayerPrivateKey: this.privateKey,
@@ -138,6 +180,28 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
                 network: this.network,
             };
         }
+    }
+
+    private async executeClientPayment(cp: any, facilitatorAddress: Address): Promise<void> {
+        const hash = await this.viemClient.writeContract({
+            address: this.usdcAddress,
+            abi: TRANSFER_WITH_AUTH_ABI,
+            functionName: 'transferWithAuthorization',
+            args: [
+                cp.sender,
+                facilitatorAddress,
+                BigInt(cp.amount),
+                BigInt(cp.validAfter),
+                BigInt(cp.validBefore),
+                cp.nonce,
+                cp.v,
+                cp.r,
+                cp.s,
+            ],
+            chain: this.fangorn.getConfig().chain,
+            account: privateKeyToAccount(this.privateKey),
+        });
+        await this.publicClient.waitForTransactionReceipt({ hash });
     }
 
     private async transferUsdc(to: Address, amount: bigint): Promise<void> {

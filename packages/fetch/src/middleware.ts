@@ -1,4 +1,4 @@
-import { createPublicClient, createWalletClient, encodePacked, http, keccak256, toHex, type Address, type Hex, type WalletClient } from "viem";
+import { createPublicClient, createWalletClient, encodePacked, http, keccak256, toBytes, toHex, type Address, type Hex, type WalletClient } from "viem";
 import { ExactEvmScheme } from "@x402/evm/exact/client";
 import { type AppConfig, Fangorn } from "@fangorn-network/sdk";
 import { wrapFetchWithPaymentFromConfig } from "@x402/fetch";
@@ -7,6 +7,7 @@ import { SettlementRegistry } from "@fangorn-network/sdk/lib/registries/settleme
 import { privateKeyToAccount } from "viem/accounts";
 import { Identity } from "@semaphore-protocol/identity";
 import { FangornMiddlewareConfig, type FetchResourceOptions, type FetchResourceResult } from "./types.js";
+import { DataSourceRegistry } from "@fangorn-network/sdk/lib/registries/datasource-registry/index.js";
 
 function createSignerFromWallet(walletClient: WalletClient, config: AppConfig): ClientEvmSigner {
     const account = walletClient.account;
@@ -58,16 +59,10 @@ export class FangornX402Middleware {
     }
 
     static async create(options: FangornMiddlewareConfig): Promise<FangornX402Middleware> {
-        const walletClient = createWalletClient({
-            account: privateKeyToAccount(options.privateKey),
-            chain: options.config.chain,
-            transport: http(options.config.rpcUrl),
-        });
-
+        const walletClient = options.walletClient
         // we only need to read from storage
         const fangorn = await Fangorn.create({
-            privateKey: options.privateKey,
-            storage: { storacha: { readOnly: true } },
+            walletClient,
             encryption: { lit: true },
             config: options.config,
             domain: options.domain,
@@ -83,13 +78,13 @@ export class FangornX402Middleware {
             },
         );
 
-        // Derive identity + stealth key (stable across sessions)
-        const identity = new Identity(options.privateKey);
-        // ERC-5489134589071234
+        // Derive identity + stealth key
+        const identitySecret = await deriveIdentitySecret(walletClient);
+        const identity = new Identity(identitySecret);
         const stealthKey = keccak256(
             encodePacked(
-                ["string", "bytes32"],
-                ["fangorn:stealth:", toHex(identity.secretScalar, { size: 32 })],
+                ['string', 'bytes32'],
+                ['fangorn:stealth:', toHex(identity.secretScalar, { size: 32 })],
             )
         ) as Hex;
 
@@ -113,16 +108,14 @@ export class FangornX402Middleware {
         const facilitatorAddress = "0x147c24c5Ea2f1EE1ac42AD16820De23bBba45Ef6" as Address;
 
         const {
-            privateKey,
             owner,
             schemaName,
-            tag,
+            name,
             baseUrl = "http://127.0.0.1:30333",
             authToken,
         } = options;
 
         try {
-            // resolve schema
             let schemaId: Hex;
             try {
                 schemaId = await this.fangorn.getSchemaRegistry().schemaId(schemaName);
@@ -130,43 +123,76 @@ export class FangornX402Middleware {
                 throw new Error(`Schema "${schemaName}" not found on-chain.`);
             }
 
-            const resourceId = SettlementRegistry.deriveResourceId(owner, schemaId, tag);
+            const resourceId = DataSourceRegistry.resourceIdLocal(owner, schemaId, name);
+
+            //TODO: move to new function
+            {
+                // if already settled, skip payment and decrypt directly
+                const alreadySettled = await this.fangorn.getSettlementRegistry().isSettled(
+                    this.stealthAddress,
+                    resourceId,
+                )
+
+                if (alreadySettled) {
+                    const stealthWalletClient = createWalletClient({
+                        account: privateKeyToAccount(this.stealthKey),
+                        chain: this.fetchConfig.config.chain,
+                        transport: http(this.fetchConfig.config.rpcUrl),
+                    })
+                    const data = await this.fangorn.consumer.decrypt({
+                        owner,
+                        schemaId,
+                        name,
+                        field,
+                        walletClient: stealthWalletClient,
+                        nullifierHash: 0n,
+                        identity: this.identity,
+                        skipSettlementCheck: true,
+                    })
+                    return { success: true, data, dataString: new TextDecoder().decode(data) }
+                }
+
+            }
+
             const price = await this.fangorn.getSettlementRegistry().getPrice(resourceId);
 
-            // the client pays the facilitator (prepares a signed transferWithAuthorization call)
+            // fetch facilitator fee rate
+            const feeRes = await fetch(`${baseUrl}/fee`)
+            const { feePercent } = await feeRes.json()
+            const feeBps = BigInt(Math.round(feePercent * 100))
+            const fee = (price * feeBps) / 10000n
+            const totalAmount = price + fee
+
+            const authHeaders = authToken
+                ? { "Content-Type": "application/json", "Authorization": `Bearer ${authToken}` }
+                : { "Content-Type": "application/json" };
+
+            // sign for price + fee
             const clientPayment = await this.fangorn.consumer.prepareRegister({
-                // TODO: refactor field in Fangorn
-                burnerPrivateKey: privateKey,
+                walletClient: this.walletClient,
                 paymentRecipient: facilitatorAddress,
-                amount: price,
+                amount: totalAmount,
                 usdcAddress: usdcContractAddress,
                 usdcDomainName,
                 usdcDomainVersion: "2",
             });
 
-            // can be empty
-            const authHeaders = authToken
-                ? { "Content-Type": "application/json", "Authorization": `Bearer ${authToken}` }
-                : { "Content-Type": "application/json" };
-
-            // get the response from the verify call directly and handle it
             const verifyRes = await fetch(`${baseUrl}/verify`, {
                 method: "POST",
                 headers: authHeaders,
                 body: JSON.stringify({
-                    paymentPayload: {
-                        x402Version: 2,
-                    },
+                    paymentPayload: { x402Version: 2 },
                     paymentRequirements: {
                         scheme: "exact",
                         network: `eip155:${this.fetchConfig.config.caip2}`,
-                        amount: price.toString(),
+                        amount: totalAmount.toString(),
                         asset: usdcContractAddress,
                         payTo: facilitatorAddress,
                         extra: {
                             name: usdcDomainName,
                             version: "2",
                             resourceId,
+                            resourcePrice: price.toString(), // raw price, before fee
                             clientPayment,
                             identityCommitment: this.identity.commitment.toString(),
                             stealthAddress: this.stealthAddress,
@@ -176,30 +202,25 @@ export class FangornX402Middleware {
             });
 
             const verifyBody = await verifyRes.json();
-
             if (!verifyBody.isValid) {
                 return { success: false, error: `Verify failed: ${verifyBody.invalidReason}` };
             }
 
-            // valid => isRegistered == true => prepare settle (builds semaphore proof)
             const preparedSettle = await this.fangorn.consumer.prepareSettle({
                 resourceId,
                 identity: this.identity,
                 stealthAddress: this.stealthAddress,
             });
 
-            // settle
             const settleRes = await fetch(`${baseUrl}/settle`, {
                 method: "POST",
                 headers: authHeaders,
                 body: JSON.stringify({
-                    paymentPayload: {
-                        x402Version: 2,
-                    },
+                    paymentPayload: { x402Version: 2 },
                     paymentRequirements: {
                         scheme: "exact",
                         network: `eip155:${this.fetchConfig.config.caip2}`,
-                        amount: price.toString(),
+                        amount: totalAmount.toString(),
                         asset: usdcContractAddress,
                         payTo: facilitatorAddress,
                         extra: {
@@ -214,14 +235,12 @@ export class FangornX402Middleware {
             });
 
             const settleBody = await settleRes.json();
-
             if (!settleBody.success) {
                 return { success: false, error: `Settle failed: ${settleBody.errorReason}` };
             }
 
             const nullifierHash = BigInt(settleBody.extensions.nullifier);
 
-            // decrypt
             const stealthWalletClient = createWalletClient({
                 account: privateKeyToAccount(this.stealthKey),
                 chain: this.fetchConfig.config.chain,
@@ -231,7 +250,7 @@ export class FangornX402Middleware {
             const data = await this.fangorn.consumer.decrypt({
                 owner,
                 schemaId,
-                tag,
+                name,
                 field,
                 walletClient: stealthWalletClient,
                 nullifierHash,
@@ -253,6 +272,8 @@ export class FangornX402Middleware {
         }
     }
 
+    // helpers
+    // todo: unsafe
     getAddress(): Hex {
         return this.walletClient.account!.address;
     }
@@ -260,4 +281,13 @@ export class FangornX402Middleware {
     getPaymentFetch(): typeof fetch {
         return this.fetchWithPayment;
     }
+}
+
+async function deriveIdentitySecret(walletClient: WalletClient): Promise<Hex> {
+    const message = 'fangorn:identity:v1'
+    const signature = await walletClient.signMessage({
+        account: walletClient.account!,
+        message,
+    })
+    return keccak256(toBytes(signature))
 }
