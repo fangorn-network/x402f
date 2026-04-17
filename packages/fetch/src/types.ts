@@ -16,13 +16,13 @@ export interface FetchResourceOptions {
     schemaName: string;
     name: string;
     baseUrl: string;
+    nullifierHash?: string;
     authToken?: string;
 }
 
 export interface FetchResourceResult {
     success: boolean;
     data?: Uint8Array;
-    dataString?: string;
     alreadyPaid?: boolean;
     paymentResponse?: unknown;
     error?: string;

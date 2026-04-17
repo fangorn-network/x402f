@@ -41,8 +41,8 @@ async function nodeExample() {
     });
 
     const owner = "0x147c24c5Ea2f1EE1ac42AD16820De23bBba45Ef6" as Address;
-    const schemaName = "fangorn.music.demo.v0";
-    const name = "test";
+    const schemaName = "fangorn.test.0";
+    const name = "locura3";
 
     const result = await middleware.fetchResource({
         owner,

@@ -63,7 +63,6 @@ export class FangornX402Middleware {
         // we only need to read from storage
         const fangorn = await Fangorn.create({
             walletClient,
-            encryption: { lit: true },
             config: options.config,
             domain: options.domain,
         });
@@ -107,12 +106,13 @@ export class FangornX402Middleware {
         const usdcDomainName = "USD Coin";
         const facilitatorAddress = "0x147c24c5Ea2f1EE1ac42AD16820De23bBba45Ef6" as Address;
 
-        const {
+        let {
             owner,
             schemaName,
             name,
             baseUrl = "http://127.0.0.1:30333",
             authToken,
+            nullifierHash,
         } = options;
 
         try {
@@ -133,23 +133,22 @@ export class FangornX402Middleware {
                     resourceId,
                 )
 
-                if (alreadySettled) {
+                if (alreadySettled && nullifierHash) {
                     const stealthWalletClient = createWalletClient({
                         account: privateKeyToAccount(this.stealthKey),
                         chain: this.fetchConfig.config.chain,
                         transport: http(this.fetchConfig.config.rpcUrl),
                     })
-                    const data = await this.fangorn.consumer.decrypt({
+                    const result = await this.fangorn.consumer.fetchField(
                         owner,
                         schemaId,
                         name,
                         field,
-                        walletClient: stealthWalletClient,
-                        nullifierHash: 0n,
-                        identity: this.identity,
-                        skipSettlementCheck: true,
-                    })
-                    return { success: true, data, dataString: new TextDecoder().decode(data) }
+                        nullifierHash,
+                        stealthWalletClient,
+                    );
+
+                    return { success: true, data: result.data }
                 }
 
             }
@@ -239,7 +238,7 @@ export class FangornX402Middleware {
                 return { success: false, error: `Settle failed: ${settleBody.errorReason}` };
             }
 
-            const nullifierHash = BigInt(settleBody.extensions.nullifier);
+            nullifierHash = settleBody.extensions.nullifier;
 
             const stealthWalletClient = createWalletClient({
                 account: privateKeyToAccount(this.stealthKey),
@@ -247,21 +246,18 @@ export class FangornX402Middleware {
                 transport: http(this.fetchConfig.config.rpcUrl),
             });
 
-            const data = await this.fangorn.consumer.decrypt({
+            const result = await this.fangorn.consumer.fetchField(
                 owner,
                 schemaId,
                 name,
                 field,
-                walletClient: stealthWalletClient,
                 nullifierHash,
-                identity: this.identity,
-                skipSettlementCheck: true,
-            });
+                stealthWalletClient,
+            );
 
             return {
                 success: true,
-                data,
-                dataString: new TextDecoder().decode(data),
+                data: result.data
             };
 
         } catch (error) {
