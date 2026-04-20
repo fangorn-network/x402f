@@ -257,7 +257,8 @@ export class FangornX402Middleware {
 
             return {
                 success: true,
-                data: result.data
+                data: result.data,
+                paymentResponse: nullifierHash
             };
 
         } catch (error) {
