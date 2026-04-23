@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@fangorn-network/fetch": "file:../../packages/fetch",
+    "@fangorn-network/fetch": "2026.4.23",
     "@fangorn-network/sdk": "2026.4.23",
     "@semaphore-protocol/identity": "^4.14.2"
   },

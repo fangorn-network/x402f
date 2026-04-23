@@ -45,6 +45,22 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  examples/node:
+    dependencies:
+      '@fangorn-network/fetch':
+        specifier: 2026.4.23
+        version: 2026.4.23(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.2)(react-native@0.85.1(@babel/core@7.29.0)(react@19.2.5))(react@19.2.5)(typescript@5.9.3)(zod@3.25.76)
+      '@fangorn-network/sdk':
+        specifier: 2026.4.23
+        version: 2026.4.23(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.2)(react-native@0.85.1(@babel/core@7.29.0)(react@19.2.5))(react@19.2.5)(typescript@5.9.3)(zod@3.25.76)
+      '@semaphore-protocol/identity':
+        specifier: ^4.14.2
+        version: 4.14.2
+    devDependencies:
+      viem:
+        specifier: 2.47.1
+        version: 2.47.1(typescript@5.9.3)(zod@3.25.76)
+
   packages/facilitator:
     dependencies:
       '@fangorn-network/sdk':
@@ -428,6 +444,9 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
+
+  '@fangorn-network/fetch@2026.4.23':
+    resolution: {integrity: sha512-bLyd1Wa5o/RG07/zGUE+5xDvYDZb2klGj9DM3a/uXtp6GeUuGu0HoIMYBtaS9+TsAx2d3I4NxMDkPiyd5tjriQ==}
 
   '@fangorn-network/sdk@2026.4.23':
     resolution: {integrity: sha512-wbtQt42sCnOfJnjaqE/X/nlnwkXf2dZX3R6twfWSUVBjujl7f8kZQAT+Bcbw+pFbZDtXtRnJzEQeDVHbueB6tg==}
@@ -4092,6 +4111,31 @@ snapshots:
 
   '@esbuild/win32-x64@0.27.7':
     optional: true
+
+  '@fangorn-network/fetch@2026.4.23(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.2)(react-native@0.85.1(@babel/core@7.29.0)(react@19.2.5))(react@19.2.5)(typescript@5.9.3)(zod@3.25.76)':
+    dependencies:
+      '@fangorn-network/sdk': 2026.4.23(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.2)(react-native@0.85.1(@babel/core@7.29.0)(react@19.2.5))(react@19.2.5)(typescript@5.9.3)(zod@3.25.76)
+      '@semaphore-protocol/identity': 4.14.2
+      '@x402/core': 2.10.0
+      '@x402/evm': 2.10.0(typescript@5.9.3)
+      '@x402/fetch': 2.10.0(typescript@5.9.3)
+    transitivePeerDependencies:
+      - '@bufbuild/protobuf'
+      - '@grpc/grpc-js'
+      - '@types/snarkjs'
+      - bufferutil
+      - debug
+      - encoding
+      - express
+      - graphql
+      - react
+      - react-dom
+      - react-native
+      - react-native-b4a
+      - supports-color
+      - typescript
+      - utf-8-validate
+      - zod
 
   '@fangorn-network/sdk@2026.4.23(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.2)(react-native@0.85.1(@babel/core@7.29.0)(react@19.2.5))(react@19.2.5)(typescript@5.9.3)(zod@3.25.76)':
     dependencies:
