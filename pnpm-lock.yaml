@@ -7,8 +7,8 @@ settings:
 catalogs:
   default:
     '@fangorn-network/sdk':
-      specifier: 2026.4.15
-      version: 2026.4.15
+      specifier: 2026.4.23
+      version: 2026.4.23
     '@x402/core':
       specifier: ^2.5.0
       version: 2.10.0
@@ -45,11 +45,27 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  examples/node:
+    dependencies:
+      '@fangorn-network/fetch':
+        specifier: 2026.4.23
+        version: 2026.4.23(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.2)(react-native@0.85.1(@babel/core@7.29.0)(react@19.2.5))(react@19.2.5)(typescript@5.9.3)(zod@3.25.76)
+      '@fangorn-network/sdk':
+        specifier: 2026.4.23
+        version: 2026.4.23(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.2)(react-native@0.85.1(@babel/core@7.29.0)(react@19.2.5))(react@19.2.5)(typescript@5.9.3)(zod@3.25.76)
+      '@semaphore-protocol/identity':
+        specifier: ^4.14.2
+        version: 4.14.2
+    devDependencies:
+      viem:
+        specifier: 2.47.1
+        version: 2.47.1(typescript@5.9.3)(zod@3.25.76)
+
   packages/facilitator:
     dependencies:
       '@fangorn-network/sdk':
         specifier: 'catalog:'
-        version: 2026.4.15(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.2)(react-native@0.85.1(@babel/core@7.29.0)(react@19.2.5))(react@19.2.5)(typescript@5.9.3)(zod@3.25.76)
+        version: 2026.4.23(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.2)(react-native@0.85.1(@babel/core@7.29.0)(react@19.2.5))(react@19.2.5)(typescript@5.9.3)(zod@3.25.76)
       '@semaphore-protocol/identity':
         specifier: ^4.14.2
         version: 4.14.2
@@ -83,7 +99,7 @@ importers:
     dependencies:
       '@fangorn-network/sdk':
         specifier: 'catalog:'
-        version: 2026.4.15(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.2)(react-native@0.85.1(@babel/core@7.29.0)(react@19.2.5))(react@19.2.5)(typescript@5.9.3)(zod@3.25.76)
+        version: 2026.4.23(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.2)(react-native@0.85.1(@babel/core@7.29.0)(react@19.2.5))(react@19.2.5)(typescript@5.9.3)(zod@3.25.76)
       '@semaphore-protocol/identity':
         specifier: ^4.14.2
         version: 4.14.2
@@ -429,8 +445,11 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@fangorn-network/sdk@2026.4.15':
-    resolution: {integrity: sha512-QatUiM6QYxGQApUok66T3ixCa4jA/FIP9s5yXnYm9GeqPt5D4uqCuuOSNxKqz8YO/ljJyZLhUCfiCFVp8T7EsQ==}
+  '@fangorn-network/fetch@2026.4.23':
+    resolution: {integrity: sha512-bLyd1Wa5o/RG07/zGUE+5xDvYDZb2klGj9DM3a/uXtp6GeUuGu0HoIMYBtaS9+TsAx2d3I4NxMDkPiyd5tjriQ==}
+
+  '@fangorn-network/sdk@2026.4.23':
+    resolution: {integrity: sha512-wbtQt42sCnOfJnjaqE/X/nlnwkXf2dZX3R6twfWSUVBjujl7f8kZQAT+Bcbw+pFbZDtXtRnJzEQeDVHbueB6tg==}
     engines: {node: '>=20.19.0'}
     hasBin: true
 
@@ -4093,7 +4112,32 @@ snapshots:
   '@esbuild/win32-x64@0.27.7':
     optional: true
 
-  '@fangorn-network/sdk@2026.4.15(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.2)(react-native@0.85.1(@babel/core@7.29.0)(react@19.2.5))(react@19.2.5)(typescript@5.9.3)(zod@3.25.76)':
+  '@fangorn-network/fetch@2026.4.23(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.2)(react-native@0.85.1(@babel/core@7.29.0)(react@19.2.5))(react@19.2.5)(typescript@5.9.3)(zod@3.25.76)':
+    dependencies:
+      '@fangorn-network/sdk': 2026.4.23(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.2)(react-native@0.85.1(@babel/core@7.29.0)(react@19.2.5))(react@19.2.5)(typescript@5.9.3)(zod@3.25.76)
+      '@semaphore-protocol/identity': 4.14.2
+      '@x402/core': 2.10.0
+      '@x402/evm': 2.10.0(typescript@5.9.3)
+      '@x402/fetch': 2.10.0(typescript@5.9.3)
+    transitivePeerDependencies:
+      - '@bufbuild/protobuf'
+      - '@grpc/grpc-js'
+      - '@types/snarkjs'
+      - bufferutil
+      - debug
+      - encoding
+      - express
+      - graphql
+      - react
+      - react-dom
+      - react-native
+      - react-native-b4a
+      - supports-color
+      - typescript
+      - utf-8-validate
+      - zod
+
+  '@fangorn-network/sdk@2026.4.23(@types/snarkjs@0.7.9)(encoding@0.1.13)(express@5.2.1)(graphql@16.13.2)(react-native@0.85.1(@babel/core@7.29.0)(react@19.2.5))(react@19.2.5)(typescript@5.9.3)(zod@3.25.76)':
     dependencies:
       '@a2a-js/sdk': 0.3.13(express@5.2.1)
       '@clack/prompts': 1.2.0
@@ -5274,7 +5318,7 @@ snapshots:
 
   '@scure/bip32@1.7.0':
     dependencies:
-      '@noble/curves': 1.9.1
+      '@noble/curves': 1.9.7
       '@noble/hashes': 1.8.0
       '@scure/base': 1.2.6
 

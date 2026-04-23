@@ -1,6 +1,6 @@
 {
   "name": "@fangorn-network/fetch",
-  "version": "2026.04.22",
+  "version": "2026.04.23",
   "description": "",
   "type": "module",
   "main": "./dist/index.js",
@@ -18,7 +18,7 @@
   ],
   "scripts": {
     "build": "tsdown",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exitP 1"
   },
   "keywords": [],
   "author": "",
