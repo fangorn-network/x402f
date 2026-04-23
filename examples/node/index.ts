@@ -29,8 +29,6 @@ async function nodeExample() {
         transport: http(FangornConfig.ArbitrumSepolia.rpcUrl)
     });
 
-
-
     const middleware = await FangornX402Middleware.create({
         walletClient: walletClient as any,
         config,
@@ -42,7 +40,7 @@ async function nodeExample() {
 
     const owner = "0x147c24c5Ea2f1EE1ac42AD16820De23bBba45Ef6" as Address;
     const schemaName = "fangorn.test.0";
-    const name = "locura3";
+    const name = "atom-heart-mother";
 
     const result = await middleware.fetchResource({
         owner,

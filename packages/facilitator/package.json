@@ -1,6 +1,6 @@
 {
   "name": "@fangorn-network/facilitator",
-  "version": "2026.04.22-1",
+  "version": "2026.04.23",
   "description": "The x402f facilitator",
   "type": "module",
   "main": "./dist/index.js",
