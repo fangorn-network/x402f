@@ -5,7 +5,7 @@ import { ExactEvmSchemeV1 } from "@x402/evm/exact/v1/facilitator";
 import { AppConfig, Fangorn, FangornConfig } from "@fangorn-network/sdk";
 import { createWalletClient, Hex, http, publicActions } from "viem";
 import { Account, Address, privateKeyToAccount } from "viem/accounts";
-import { ContentRegistryScheme } from "./scheme.js";
+import { FangornScheme } from "./scheme.js";
 
 /**
  * Initialize and configure the x402 facilitator with EVM and SVM support
@@ -90,7 +90,7 @@ async function createFacilitator(
         .registerV1(network, new ExactEvmSchemeV1(evmSigner))
         .register(
             `eip155:${config.caip2}`,
-            new ContentRegistryScheme(
+            new FangornScheme(
                 privateKey,
                 evmSigner,
                 fangorn,

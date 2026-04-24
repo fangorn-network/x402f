@@ -43,13 +43,31 @@ const TRANSFER_WITH_AUTH_ABI = [{
 
 export type NullifierStore = Map<Hex, bigint>;
 
-export class ContentRegistryScheme implements SchemeNetworkFacilitator {
+/**
+ * FIFO async lock. Queues functions so they run serially on one key.
+ * Used to serialize writes from the facilitator EOA and prevent
+ * nonce collisions under concurrent verify/settle calls.
+ */
+class NonceMutex {
+    private chain: Promise<unknown> = Promise.resolve();
+
+    run<T>(fn: () => Promise<T>): Promise<T> {
+        const next = this.chain.then(fn, fn);
+        // swallow errors on the internal chain so one failure doesn't
+        // poison subsequent waiters; callers still see their own rejection
+        this.chain = next.catch(() => {});
+        return next;
+    }
+}
+
+export class FangornScheme implements SchemeNetworkFacilitator {
     readonly scheme = "exact";
     readonly caipFamily = "eip155:*";
 
     private readonly nullifiers: NullifierStore;
     private readonly publicClient: ReturnType<typeof createPublicClient>;
     private readonly viemClient: ReturnType<typeof createWalletClient>;
+    private readonly facilitatorLock = new NonceMutex();
 
     constructor(
         private readonly privateKey: Hex,
@@ -59,6 +77,7 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
         private readonly network: Network,
         nullifiers: NullifierStore,
         // default 2.5%
+        // should this be static instead?
         private readonly feePercent: number = 2.5,
     ) {
         this.nullifiers = nullifiers;
@@ -124,13 +143,16 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
                 });
 
             // burner pays owner, identity registers in the appropriate semaphore group
+            // serialized: register() signs with the facilitator relayer key
             try {
-                await this.fangorn.getSettlementRegistry().register({
-                    resourceId: extra.resourceId,
-                    identityCommitment: BigInt(extra.identityCommitment),
-                    relayerPrivateKey: this.privateKey,
-                    preparedRegister,
-                });
+                await this.facilitatorLock.run(() =>
+                    this.fangorn.getSettlementRegistry().register({
+                        resourceId: extra.resourceId,
+                        identityCommitment: BigInt(extra.identityCommitment),
+                        relayerPrivateKey: this.privateKey,
+                        preparedRegister,
+                    })
+                );
             } catch (e) {
                 const msg = (e as Error).message;
                 if (!msg.includes("AlreadyRegistered")) {
@@ -155,11 +177,14 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
             if (!extra?.preparedSettle) throw new Error("Missing preparedSettle");
             if (!extra?.resourceId) throw new Error("Missing resourceId");
 
-            // claim membership in semaphore group 
-            const { hash, nullifier } = await this.fangorn.getSettlementRegistry().settle({
-                relayerPrivateKey: this.privateKey,
-                preparedSettle: extra.preparedSettle,
-            });
+            // claim membership in semaphore group
+            // serialized: settle() signs with the facilitator relayer key
+            const { hash, nullifier } = await this.facilitatorLock.run(() =>
+                this.fangorn.getSettlementRegistry().settle({
+                    relayerPrivateKey: this.privateKey,
+                    preparedSettle: extra.preparedSettle,
+                })
+            );
 
             this.nullifiers.set(extra.resourceId as Hex, nullifier);
 
@@ -183,37 +208,41 @@ export class ContentRegistryScheme implements SchemeNetworkFacilitator {
     }
 
     private async executeClientPayment(cp: any, facilitatorAddress: Address): Promise<void> {
-        const hash = await this.viemClient.writeContract({
-            address: this.usdcAddress,
-            abi: TRANSFER_WITH_AUTH_ABI,
-            functionName: 'transferWithAuthorization',
-            args: [
-                cp.sender,
-                facilitatorAddress,
-                BigInt(cp.amount),
-                BigInt(cp.validAfter),
-                BigInt(cp.validBefore),
-                cp.nonce,
-                cp.v,
-                cp.r,
-                cp.s,
-            ],
-            chain: this.fangorn.getConfig().chain,
-            account: privateKeyToAccount(this.privateKey),
+        await this.facilitatorLock.run(async () => {
+            const hash = await this.viemClient.writeContract({
+                address: this.usdcAddress,
+                abi: TRANSFER_WITH_AUTH_ABI,
+                functionName: 'transferWithAuthorization',
+                args: [
+                    cp.sender,
+                    facilitatorAddress,
+                    BigInt(cp.amount),
+                    BigInt(cp.validAfter),
+                    BigInt(cp.validBefore),
+                    cp.nonce,
+                    cp.v,
+                    cp.r,
+                    cp.s,
+                ],
+                chain: this.fangorn.getConfig().chain,
+                account: privateKeyToAccount(this.privateKey),
+            });
+            await this.publicClient.waitForTransactionReceipt({ hash });
         });
-        await this.publicClient.waitForTransactionReceipt({ hash });
     }
 
     private async transferUsdc(to: Address, amount: bigint): Promise<void> {
-        const hash = await this.viemClient.writeContract({
-            address: this.usdcAddress,
-            abi: ERC20_TRANSFER_ABI,
-            functionName: "transfer",
-            args: [to, amount],
-            chain: this.fangorn.getConfig().chain,
-            account: privateKeyToAccount(this.privateKey),
+        await this.facilitatorLock.run(async () => {
+            const hash = await this.viemClient.writeContract({
+                address: this.usdcAddress,
+                abi: ERC20_TRANSFER_ABI,
+                functionName: "transfer",
+                args: [to, amount],
+                chain: this.fangorn.getConfig().chain,
+                account: privateKeyToAccount(this.privateKey),
+            });
+            await this.publicClient.waitForTransactionReceipt({ hash });
         });
-        await this.publicClient.waitForTransactionReceipt({ hash });
     }
 
     getSigners(_network: string): string[] {
