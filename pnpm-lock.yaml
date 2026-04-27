@@ -112,6 +112,9 @@ importers:
       '@x402/fetch':
         specifier: 'catalog:'
         version: 2.10.0(typescript@5.9.3)
+      poseidon-lite:
+        specifier: ^0.3.0
+        version: 0.3.0
     devDependencies:
       tsdown:
         specifier: ^0.21.1
