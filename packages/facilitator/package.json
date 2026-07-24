@@ -21,7 +21,6 @@
   "license": "ISC",
   "dependencies": {
     "@fangorn-network/sdk": "catalog:",
-    "@semaphore-protocol/identity": "^4.14.2",
     "@x402/core": "catalog:",
     "@x402/evm": "catalog:",
     "@x402/fetch": "catalog:",

@@ -2,30 +2,32 @@ import { x402Facilitator } from "@x402/core/facilitator";
 import { Network } from "@x402/core/types";
 import { toFacilitatorEvmSigner } from "@x402/evm";
 import { ExactEvmSchemeV1 } from "@x402/evm/exact/v1/facilitator";
-import { AppConfig, Fangorn, FangornConfig } from "@fangorn-network/sdk";
+// Import config from the subpath, not the package root: the published SDK's
+// root re-exports its crypto module, whose bundled `@noble/ciphers` import is
+// broken and crashes on load. The facilitator only needs the config object.
+import { type AppConfig, FangornConfig } from "@fangorn-network/sdk/lib/config.js";
 import { createWalletClient, Hex, http, publicActions } from "viem";
 import { Account, Address, privateKeyToAccount } from "viem/accounts";
-import { FangornScheme } from "./scheme.js";
+import { FangornScheme, type NullifierStore } from "./scheme.js";
 
 /**
- * Initialize and configure the x402 facilitator with EVM and SVM support
- * This is called lazily on first use to support Next.js module loading
+ * Initialize and configure the x402 facilitator.
+ * Called lazily on first use to support Next.js module loading.
  *
- *  `config`: The Fangorn app config
- *  `network`: The network name for x402 e.g. `${"base-sepolia" as Network}` for Base Sepolia
- * `evmAccount`: The EVM account to use
- * 
+ *  `config`: The Fangorn app config (chain, rpcUrl, caip2)
+ *  `network`: The x402 network id, e.g. `eip155:421614`
+ * `evmAccount`: The facilitator's relayer account (pays gas)
+ * `registryAddress`: The Stylus SettlementRegistry the facilitator relays to
+ *
  * @returns A configured x402Facilitator instance
  */
-async function createFacilitator(
+function createFacilitator(
     privateKey: Hex,
     config: AppConfig,
     network: Network,
     evmAccount: Account,
-    // usdcDomainName: string,
-    usdcContractAddress: Address,
-    // settlementTrackerAddress: Address,
-): Promise<x402Facilitator> {
+    registryAddress: Address,
+): x402Facilitator {
     // Create a Viem client with both wallet and public capabilities
     const viemClient = createWalletClient({
         account: evmAccount,
@@ -33,7 +35,7 @@ async function createFacilitator(
         transport: http(config.rpcUrl),
     }).extend(publicActions);
 
-    const nullifierStore: Map<Hex, bigint> = new Map();
+    const nullifierStore: NullifierStore = new Map();
 
     // Initialize the x402 Facilitator with EVM signer
     const evmSigner = toFacilitatorEvmSigner({
@@ -77,15 +79,9 @@ async function createFacilitator(
         getCode: (args: { address: `0x${string}` }) => viemClient.getCode(args),
     });
 
-    // the fangorn instance (read only)
-    const fangorn = await Fangorn.create({
-        walletClient: viemClient,
-        encryption: { lit: true },
-        config,
-        domain: "localhost",
-    });
-
-    // Create and configure the facilitator
+    // Create and configure the facilitator. The standard x402 exact scheme is
+    // registered for wire-compat; the Fangorn register/claim flow is the
+    // custom scheme handling this network.
     const facilitator = new x402Facilitator()
         .registerV1(network, new ExactEvmSchemeV1(evmSigner))
         .register(
@@ -93,57 +89,48 @@ async function createFacilitator(
             new FangornScheme(
                 privateKey,
                 evmSigner,
-                fangorn,
-                usdcContractAddress as Address,
-                // config.caip2,
-                // usdcDomainName,z
-                `eip155:${config.caip2}`,
-                nullifierStore
-            )
+                registryAddress,
+                config.chain,
+                config.rpcUrl,
+                `eip155:${config.caip2}` as Network,
+                nullifierStore,
+            ),
         );
 
     return facilitator;
 }
 
 // Lazy initialization
-let _facilitatorPromise: Promise<x402Facilitator> | null = null;
+let _facilitator: x402Facilitator | null = null;
 
 /**
- * Get the configured facilitator instance
- * Uses lazy initialization to create the facilitator on first access
- *
- * @returns A promise that resolves to the configured facilitator
+ * Get the configured facilitator instance.
+ * Uses lazy initialization to create the facilitator on first access.
  */
-export async function getFacilitator(): Promise<x402Facilitator> {
-
-    if (!_facilitatorPromise) {
+export function getFacilitator(): x402Facilitator {
+    if (!_facilitator) {
         const privkey = process.env.FACILITATOR_EVM_PRIVATE_KEY;
         if (!privkey) {
             throw new Error("❌ FACILITATOR_EVM_PRIVATE_KEY environment variable is required");
         }
+        const registryAddress = process.env.SETTLEMENT_REGISTRY_ADDR;
+        if (!registryAddress) {
+            throw new Error("❌ SETTLEMENT_REGISTRY_ADDR environment variable is required");
+        }
 
-        const usdcContractAddress = process.env.USDC_CONTRACT_ADDR!;
-        // Initialize the EVM account from private key
         const evmAccount = privateKeyToAccount(privkey as `0x${string}`);
 
-        // TODO: can the facilitator can support multiple networks?
-        // default to arbitrum
-        let config = FangornConfig.ArbitrumSepolia;
-        let networkString = "arbitrum-sepolia";
-        // TODO: multichain support
-        // if (chainName === "baseSepolia") {
-        // 	networkString = "base-sepolia";
-        // 	config = FangornConfig.BaseSepolia;
-        // }
-
-        _facilitatorPromise = createFacilitator(
+        // ponytail: single network (Arbitrum Sepolia). FangornConfig is the
+        // source of truth for chain/rpc/caip2; add multichain when a second
+        // network actually ships.
+        _facilitator = createFacilitator(
             privkey as Hex,
-            config,
-            networkString as Network,
+            FangornConfig,
+            `eip155:${FangornConfig.caip2}` as Network,
             evmAccount,
-            usdcContractAddress as Address,
+            registryAddress as Address,
         );
     }
 
-    return _facilitatorPromise;
+    return _facilitator;
 }

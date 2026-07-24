@@ -114,9 +114,11 @@ app.get("/supported", async (req, res) => {
   }
 });
 
-// TODO: make this configurable
+// The registry enforces `amount == price` (payment goes straight to the
+// resource owner), so the facilitator can't skim a fee on-chain — it only
+// relays and pays gas. Reported as 0 for any client that still queries it.
 app.get('/fee', (req, res) => {
-    res.json({ feePercent: 2.5 })
+    res.json({ feePercent: 0 })
 })
 
 const port = parseInt(process.env.FACILITATOR_PORT!) || 0;

@@ -4,28 +4,30 @@ The `x402f facilitator` is a semi-trusted x402 facilitator that settles payments
 - Verifies payment payloads submitted by clients.
 - Settles payments on the blockchain on behalf of servers.
 
-The **x402f facilitator** replaces the standard verify/settle mechanism with a register/claim approach.
+The **x402f facilitator** replaces the standard verify/settle mechanism with a register/claim approach. It is a **gas-paying relayer**: the payment and settlement logic now live entirely in the Stylus `SettlementRegistry`, so the facilitator just submits two contract calls on the buyer's behalf. This keeps the buyer's stealth identity unfunded and unlinkable — they never need gas or an on-chain footprint of their own.
+
+The x402 wire protocol is unchanged: clients POST `paymentPayload` + `paymentRequirements` to `/verify` and `/settle` and receive standard `VerifyResponse` / `SettleResponse` bodies. The Fangorn-specific fields ride in `paymentRequirements.extra`.
 
 ###### Verify -> Register
 
-The `/verify` endpoint retains a similar same shape as standard x402, requiring a signed `transferWithAuthorization` call, except in this case the payment must be made from the caller to the facilitator itself. An additional header is sent to inform the facilitator of the buyer's identity commitment. The facilitator:
-- executes the payment to itself form the caller
-- generates burner keys and funds it based on the amount granted by the caller
-- prepares a new transferWithAuthorization call to the settlement registry contract
-- registers and claims resources on behalf of the caller, using the ephemeral burner key
-- notifies the client on success/failure
+The buyer signs an EIP-3009 `transferWithAuthorization` paying the resource owner the exact price, and includes their Semaphore identity commitment. `/verify` relays a single `register(resourceId, identityCommitment, from, to, amount, …, v, r, s)` call to the registry, which:
+- runs the buyer's `transferWithAuthorization` (owner is paid directly), and
+- adds the identity commitment to the global Semaphore group.
+
+A repeat buy that is `AlreadyRegistered` is treated as success (idempotent).
+
+`extra`: `{ resourceId, identityCommitment, payment: { from, to, amount, validAfter, validBefore, nonce, v, r, s } }`.
 
 ###### Settle -> Claim
 
-As oppossed to a standard x402 facilitator, settlement has technically already happened on-chain. When a client called `/settle` in this case, they must pass along a zkp that they are registered within a specific semaphore group for a specific resource id. The facilitator then:
-- generates a nullifier
-- submit the proof onchain
-- returns the nullifier to the caller (caller needs the nullifier to decrypt)
+The buyer builds a Semaphore membership proof off-chain (scope = `resourceId`). `/settle` relays a single `settle(resourceId, stealthAddress, merkleTreeDepth, merkleTreeRoot, nullifier, message, points[8], hookData)` call, which validates the proof on-chain and records the settlement keyed by the buyer's stealth address. The facilitator echoes the proof's `nullifier` back in `extensions.nullifier` — the caller uses it (and its stealth key) to unlock the DEK from the access worker.
+
+`extra`: `{ resourceId, stealthAddress, merkleTreeDepth, merkleTreeRoot, nullifier, message, points, hookData? }`.
 
 ## Run
 
 0. From the root, run `pnpm i`
-1. Setup env vars by copying the templated  `cp ~/packages/facilitator/.env.local ~/packages/facilitator.env` and fill in the details
+1. Set up env vars: `cp packages/facilitator/.env.local packages/facilitator/.env` and fill in `FACILITATOR_EVM_PRIVATE_KEY` (a relayer key with testnet ETH for gas)
 2. Run the facilitator locally with `pnpm facilitator`
 
 ### Docker

@@ -1,58 +1,49 @@
-# Node Example
+# Node Example — paid content sale, end-to-end
 
-This node script demonstrates usage of `@x402f/fetch` to purchase and consumer data anonymously.
+A single self-contained script (`index.ts`) that sells one piece of encrypted
+content and buys it back through the **x402f facilitator**, proving the whole
+private-payment loop works:
 
-## The Demo
+```
+SELL   encrypt → upload {ciphertext, sealed DEK} to the access worker
+       createResource(resourceId, price, uri)                     [owner, on-chain]
 
-1. define a schema
-2. register the schema
-3. upload some data that conforms to the schema
-4. purchase access, download the ciphertext bundle, decrypt
+BUY    derive Semaphore identity + stealth address                [buyer]
+       sign EIP-3009 authorization paying the owner the price      [buyer]
+       POST /verify  → facilitator relays register(...)            [pays owner, joins group]
+       build Semaphore membership proof (scope = resourceId)       [buyer]
+       POST /settle  → facilitator relays settle(...)              [records settlement]
 
----
-
-#### Schema registration
-
-We will use the simple schema below, and call it `noagent-fangorn.test.music.v0`:
-
-Save this as `schema.json` locally:
-
-``` json
-{
-    "title": { "@type": "string" },
-    "artist": { "@type": "string" },
-    "audio": { "@type": "encrypted", "gadget": "settled" }
-}
+ACCESS sign /access with the stealth key → worker checks isSettled → returns DEK
+       decrypt, verify plaintext hash matches the on-chain commitment
 ```
 
-Then, we register this with fangorn using the CLI `fangorn schema register noagent-fangorn.test.music.v0 -e`
+The facilitator is a gas-paying relayer: the buyer's stealth identity never
+needs ETH and never appears on-chain, so the payment and the access are
+unlinkable.
 
-Verify the schema is registered with:
+## Prerequisites
 
-`fangorn schema get noagent-fangorn.test.music.v0 -c arbitrumSepolia`
+- A running facilitator (`pnpm facilitator` from the repo root), reachable at
+  `FACILITATOR_URL`.
+- **Seller** account (`EVM_PRIVATE_KEY`) with a little Arbitrum Sepolia ETH for
+  the `createResource` gas.
+- **Buyer** account (`BUYER_PRIVATE_KEY`) holding Arbitrum Sepolia **USDC** — it
+  signs the payment but pays no gas (the facilitator relays).
 
-schema id = 0xdd2d15d54e402ac7383280029bd15eb039fba2b3ee0025ea846c67b55155bc9c
+## Run
 
-#### Schema Conformant Data
-
-We will use mock data for the sake of the demo. Save the following locally as `data.json`:
-
-``` json
-{
-    "tag": "track-01",
-    "fields": {
-        "title": "Track One",
-        "artist": "Alice",
-        "audio": { "data": [1, 2, 3, 4, 5], "fileType": "audio/mp3" }
-    }
-}
+```sh
+cp examples/node/.env.local examples/node/.env   # then fill in the two keys
+pnpm --filter node start
 ```
 
-Then we publish the data, setting an unlock price of `$0.000001 USDC` for the actual audio data.
+Set `RESOURCE_PRICE` (USDC base units, 6 decimals) to change the price; the
+buyer's signed authorization must cover exactly that amount.
 
-``` sh
-fangorn publish upload ~/fangorn/x402f/examples/node/data.json \
-    -s noagent-fangorn.test.music.v0 \
-    -c arbitrumSepolia \
-    -p 1
-```
+## Files
+
+- `index.ts` — the flow above.
+- `settle.ts` — envelope crypto (AES-256-GCM under a DEK sealed to the worker).
+- `paid.ts` — client payloads for the facilitator: identity/stealth derivation,
+  EIP-3009 signing, and the Semaphore membership proof.

@@ -7,41 +7,76 @@ import {
     type Network,
 } from "@x402/core/types";
 import { type FacilitatorEvmSigner } from "@x402/evm";
-import { Fangorn, FangornConfig } from "@fangorn-network/sdk";
-import { createPublicClient, createWalletClient, http, type Hex } from "viem";
-import { type Address, generatePrivateKey, privateKeyToAccount } from "viem/accounts";
-import { arbitrumSepolia } from "viem/chains";
+import {
+    createPublicClient,
+    createWalletClient,
+    http,
+    type Chain,
+    type Hex,
+} from "viem";
+import { type Address, privateKeyToAccount } from "viem/accounts";
 
-const ERC20_TRANSFER_ABI = [{
-    name: "transfer",
-    type: "function",
-    inputs: [
-        { name: "to", type: "address" },
-        { name: "value", type: "uint256" },
-    ],
-    outputs: [{ type: "bool" }],
-    stateMutability: "nonpayable",
-}] as const;
+// Full ABI for the on-chain writes the facilitator relays. The register/settle
+// logic lives entirely in the Stylus SettlementRegistry now (the SDK no longer
+// wraps the write path), so the facilitator is just a gas-paying relayer.
+// Names are camelCased as Stylus exports them; input `name`s are cosmetic —
+// only types + order matter for encoding.
+export const SETTLEMENT_REGISTRY_ABI = [
+    {
+        name: "register",
+        type: "function",
+        stateMutability: "payable",
+        inputs: [
+            { name: "resourceId", type: "bytes32" },
+            { name: "identityCommitment", type: "uint256" },
+            { name: "from", type: "address" },
+            { name: "to", type: "address" },
+            { name: "amount", type: "uint256" },
+            { name: "validAfter", type: "uint256" },
+            { name: "validBefore", type: "uint256" },
+            { name: "nonce", type: "bytes32" },
+            { name: "v", type: "uint8" },
+            { name: "r", type: "bytes32" },
+            { name: "s", type: "bytes32" },
+        ],
+        outputs: [],
+    },
+    {
+        name: "settle",
+        type: "function",
+        stateMutability: "nonpayable",
+        inputs: [
+            { name: "resourceId", type: "bytes32" },
+            { name: "stealthAddress", type: "address" },
+            { name: "merkleTreeDepth", type: "uint256" },
+            { name: "merkleTreeRoot", type: "uint256" },
+            { name: "nullifier", type: "uint256" },
+            { name: "message", type: "uint256" },
+            { name: "points", type: "uint256[8]" },
+            { name: "hookData", type: "bytes" },
+        ],
+        outputs: [],
+    },
+    {
+        name: "getPrice",
+        type: "function",
+        stateMutability: "view",
+        inputs: [{ name: "resourceId", type: "bytes32" }],
+        outputs: [{ type: "uint256" }],
+    },
+    {
+        name: "isSettled",
+        type: "function",
+        stateMutability: "view",
+        inputs: [
+            { name: "stealthAddress", type: "address" },
+            { name: "resourceId", type: "bytes32" },
+        ],
+        outputs: [{ type: "bool" }],
+    },
+] as const;
 
-const TRANSFER_WITH_AUTH_ABI = [{
-    name: 'transferWithAuthorization',
-    type: 'function',
-    inputs: [
-        { name: 'from', type: 'address' },
-        { name: 'to', type: 'address' },
-        { name: 'value', type: 'uint256' },
-        { name: 'validAfter', type: 'uint256' },
-        { name: 'validBefore', type: 'uint256' },
-        { name: 'nonce', type: 'bytes32' },
-        { name: 'v', type: 'uint8' },
-        { name: 'r', type: 'bytes32' },
-        { name: 's', type: 'bytes32' },
-    ],
-    outputs: [],
-    stateMutability: 'nonpayable',
-}] as const
-
-export type NullifierStore = Map<Hex, bigint>;
+export type NullifierStore = Map<Hex, string>;
 
 /**
  * FIFO async lock. Queues functions so they run serially on one key.
@@ -60,6 +95,19 @@ class NonceMutex {
     }
 }
 
+/** ERC-3009 authorization the buyer signs, paying the resource owner directly. */
+interface Erc3009Payment {
+    from: Address;
+    to: Address;
+    amount: string;
+    validAfter: string;
+    validBefore: string;
+    nonce: Hex;
+    v: number;
+    r: Hex;
+    s: Hex;
+}
+
 export class FangornScheme implements SchemeNetworkFacilitator {
     readonly scheme = "exact";
     readonly caipFamily = "eip155:*";
@@ -67,98 +115,74 @@ export class FangornScheme implements SchemeNetworkFacilitator {
     private readonly nullifiers: NullifierStore;
     private readonly publicClient: ReturnType<typeof createPublicClient>;
     private readonly viemClient: ReturnType<typeof createWalletClient>;
-    private readonly facilitatorLock = new NonceMutex();
+    private readonly lock = new NonceMutex();
 
     constructor(
         private readonly privateKey: Hex,
         private readonly signer: FacilitatorEvmSigner,
-        private readonly fangorn: Fangorn,
-        private readonly usdcAddress: Hex,
+        private readonly registryAddress: Address,
+        private readonly chain: Chain,
+        rpcUrl: string,
         private readonly network: Network,
         nullifiers: NullifierStore,
-        // default 2.5%
-        // should this be static instead?
-        private readonly feePercent: number = 2.5,
     ) {
         this.nullifiers = nullifiers;
-        const config = fangorn.getConfig();
-        this.publicClient = createPublicClient({
-            chain: config.chain,
-            transport: http(config.rpcUrl),
-        });
+        this.publicClient = createPublicClient({ chain, transport: http(rpcUrl) });
         this.viemClient = createWalletClient({
             account: privateKeyToAccount(privateKey),
-            chain: config.chain,
-            transport: http(config.rpcUrl),
+            chain,
+            transport: http(rpcUrl),
         });
     }
 
+    /**
+     * verify → register. The buyer already signed an ERC-3009 authorization
+     * paying the resource owner the exact price. We relay one `register` call:
+     * the contract runs the transferWithAuthorization and adds the buyer's
+     * identity commitment to the global Semaphore group.
+     */
     async verify(
-        payload: PaymentPayload,
-        requirements: PaymentRequirements
+        _payload: PaymentPayload,
+        requirements: PaymentRequirements,
     ): Promise<VerifyResponse> {
         try {
             const extra = (requirements as any).extra as any;
-
-            if (!extra?.identityCommitment) return { isValid: false, invalidReason: "Missing identityCommitment" };
             if (!extra?.resourceId) return { isValid: false, invalidReason: "Missing resourceId" };
-            if (!extra?.clientPayment) return { isValid: false, invalidReason: "Missing clientPayment" };
-            const cp = extra.clientPayment;
+            if (!extra?.identityCommitment) return { isValid: false, invalidReason: "Missing identityCommitment" };
+            if (!extra?.payment) return { isValid: false, invalidReason: "Missing payment" };
+            const p = extra.payment as Erc3009Payment;
 
-            const facilitatorAddress = privateKeyToAccount(this.privateKey).address;
-
-            // pull price + fee from buyer
-            const price = BigInt(extra.resourcePrice);
-            const feeBps = BigInt(Math.round(this.feePercent * 100))
-            const fee = (price * feeBps) / 10000n
-            const totalDue = price + fee
-
-            // client payment must cover price + fee
-            if (BigInt(cp.amount) < totalDue) {
-                return { isValid: false, invalidReason: `Insufficient payment: expected ${totalDue}, got ${cp.amount}` }
-            }
-
-            await this.executeClientPayment(cp, facilitatorAddress);
-
-            // facilitator funds fresh anonymous burner
-            const burnerKey = generatePrivateKey();
-            const burnerAccount = privateKeyToAccount(burnerKey);
-            await this.transferUsdc(burnerAccount.address, price);
-
-            const burnerWallet = await createWalletClient({
-                account: burnerAccount,
-                chain: arbitrumSepolia,
-                transport: http(FangornConfig.ArbitrumSepolia.rpcUrl)
-            });
-
-            // burner prepares ERC-3009 to resource owner
-            const preparedRegister = await this.fangorn.getSettlementRegistry()
-                .prepareTransferWithAuth({
-                    walletClient: burnerWallet,
-                    paymentRecipient: requirements.payTo as Address,
-                    amount: price,
-                    usdcAddress: this.usdcAddress,
-                    usdcDomainName: extra.name,
-                    usdcDomainVersion: extra.version,
-                });
-
-            // burner pays owner, identity registers in the appropriate semaphore group
-            // serialized: register() signs with the facilitator relayer key
             try {
-                await this.facilitatorLock.run(() =>
-                    this.fangorn.getSettlementRegistry().register({
-                        resourceId: extra.resourceId,
-                        identityCommitment: BigInt(extra.identityCommitment),
-                        relayerPrivateKey: this.privateKey,
-                        preparedRegister,
-                    })
-                );
+                await this.lock.run(async () => {
+                    const hash = await this.viemClient.writeContract({
+                        address: this.registryAddress,
+                        abi: SETTLEMENT_REGISTRY_ABI,
+                        functionName: "register",
+                        args: [
+                            extra.resourceId as Hex,
+                            BigInt(extra.identityCommitment),
+                            p.from,
+                            p.to,
+                            BigInt(p.amount),
+                            BigInt(p.validAfter),
+                            BigInt(p.validBefore),
+                            p.nonce,
+                            p.v,
+                            p.r,
+                            p.s,
+                        ],
+                        chain: this.chain,
+                        account: privateKeyToAccount(this.privateKey),
+                    });
+                    await this.publicClient.waitForTransactionReceipt({ hash });
+                });
             } catch (e) {
                 const msg = (e as Error).message;
+                // Idempotent: a repeat buy of the same resource by the same
+                // identity is already registered — fine, proceed to settle.
                 if (!msg.includes("AlreadyRegistered")) {
                     return { isValid: false, invalidReason: msg };
                 }
-                console.log("already registered, proceeding to settle");
             }
 
             return { isValid: true };
@@ -167,25 +191,48 @@ export class FangornScheme implements SchemeNetworkFacilitator {
         }
     }
 
+    /**
+     * settle → claim. The buyer built a Semaphore membership proof off-chain.
+     * We relay one `settle` call, which validates the proof on-chain and
+     * records the settlement keyed by the buyer's stealth address. The
+     * nullifier is a proof input (client-provided), echoed back so the caller
+     * can gate access.
+     */
     async settle(
-        payload: PaymentPayload,
+        _payload: PaymentPayload,
         requirements: PaymentRequirements,
     ): Promise<SettleResponse> {
         try {
             const extra = (requirements as any).extra as any;
+            const required = ["resourceId", "stealthAddress", "merkleTreeDepth", "merkleTreeRoot", "nullifier", "message", "points"];
+            for (const k of required) {
+                if (extra?.[k] === undefined) throw new Error(`Missing ${k}`);
+            }
 
-            if (!extra?.preparedSettle) throw new Error("Missing preparedSettle");
-            if (!extra?.resourceId) throw new Error("Missing resourceId");
-
-            // claim membership in semaphore group
-            // serialized: settle() signs with the facilitator relayer key
-            const { hash, nullifier } = await this.facilitatorLock.run(() =>
-                this.fangorn.getSettlementRegistry().settle({
-                    relayerPrivateKey: this.privateKey,
-                    preparedSettle: extra.preparedSettle,
-                })
+            const hash = await this.lock.run(() =>
+                this.viemClient.writeContract({
+                    address: this.registryAddress,
+                    abi: SETTLEMENT_REGISTRY_ABI,
+                    functionName: "settle",
+                    // Semaphore proof verification is expensive; skip estimation.
+                    gas: 8_000_000n,
+                    args: [
+                        extra.resourceId as Hex,
+                        extra.stealthAddress as Address,
+                        BigInt(extra.merkleTreeDepth),
+                        BigInt(extra.merkleTreeRoot),
+                        BigInt(extra.nullifier),
+                        BigInt(extra.message),
+                        (extra.points as (string | bigint)[]).map(BigInt) as unknown as readonly [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint],
+                        (extra.hookData ?? "0x") as Hex,
+                    ],
+                    chain: this.chain,
+                    account: privateKeyToAccount(this.privateKey),
+                }),
             );
+            await this.publicClient.waitForTransactionReceipt({ hash });
 
+            const nullifier = String(extra.nullifier);
             this.nullifiers.set(extra.resourceId as Hex, nullifier);
 
             return {
@@ -193,9 +240,7 @@ export class FangornScheme implements SchemeNetworkFacilitator {
                 transaction: hash,
                 payer: privateKeyToAccount(this.privateKey).address,
                 network: this.network,
-                extensions: {
-                    nullifier: nullifier.toString()
-                },
+                extensions: { nullifier },
             };
         } catch (e) {
             return {
@@ -205,44 +250,6 @@ export class FangornScheme implements SchemeNetworkFacilitator {
                 network: this.network,
             };
         }
-    }
-
-    private async executeClientPayment(cp: any, facilitatorAddress: Address): Promise<void> {
-        await this.facilitatorLock.run(async () => {
-            const hash = await this.viemClient.writeContract({
-                address: this.usdcAddress,
-                abi: TRANSFER_WITH_AUTH_ABI,
-                functionName: 'transferWithAuthorization',
-                args: [
-                    cp.sender,
-                    facilitatorAddress,
-                    BigInt(cp.amount),
-                    BigInt(cp.validAfter),
-                    BigInt(cp.validBefore),
-                    cp.nonce,
-                    cp.v,
-                    cp.r,
-                    cp.s,
-                ],
-                chain: this.fangorn.getConfig().chain,
-                account: privateKeyToAccount(this.privateKey),
-            });
-            await this.publicClient.waitForTransactionReceipt({ hash });
-        });
-    }
-
-    private async transferUsdc(to: Address, amount: bigint): Promise<void> {
-        await this.facilitatorLock.run(async () => {
-            const hash = await this.viemClient.writeContract({
-                address: this.usdcAddress,
-                abi: ERC20_TRANSFER_ABI,
-                functionName: "transfer",
-                args: [to, amount],
-                chain: this.fangorn.getConfig().chain,
-                account: privateKeyToAccount(this.privateKey),
-            });
-            await this.publicClient.waitForTransactionReceipt({ hash });
-        });
     }
 
     getSigners(_network: string): string[] {
