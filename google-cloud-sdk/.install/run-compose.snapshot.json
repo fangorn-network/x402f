@@ -1,0 +1,48 @@
+{
+  "components": [
+    {
+      "dependencies": [
+        "run-compose-darwin-arm",
+        "run-compose-darwin-x86_64",
+        "run-compose-linux-arm",
+        "run-compose-linux-x86",
+        "run-compose-linux-x86_64",
+        "run-compose-windows-x86",
+        "run-compose-windows-x86_64"
+      ],
+      "details": {
+        "description": "Provides run-compose executable.",
+        "display_name": "Run Compose"
+      },
+      "gdu_only": false,
+      "id": "run-compose",
+      "is_configuration": false,
+      "is_hidden": true,
+      "is_required": false,
+      "platform": {
+        "architectures": [
+          "arm",
+          "x86",
+          "x86_64"
+        ],
+        "operating_systems": [
+          "LINUX",
+          "MACOSX",
+          "WINDOWS"
+        ]
+      },
+      "platform_required": false,
+      "version": {
+        "build_number": 0,
+        "version_string": "0.1.15"
+      }
+    }
+  ],
+  "revision": 20260717053915,
+  "schema_version": {
+    "no_update": false,
+    "url": "https://dl.google.com/dl/cloudsdk/channels/rapid/google-cloud-sdk.tar.gz",
+    "version": 3
+  },
+  "version": "577.0.0"
+}

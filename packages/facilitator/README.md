@@ -33,6 +33,47 @@ The buyer builds a Semaphore membership proof off-chain (scope = `resourceId`). 
 ### Docker
 
 To run as a docker image, configure env vars and then, from the root, run `docker compose up --build`.
+  
+
+## Deploy 
+
+``` sh
+# install gcloud cli
+# Update system packages and install prerequisites
+sudo apt-get update
+
+curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-x86_64.tar.gz
+tar -xf google-cloud-cli-linux-x86_64.tar.gz
+./google-cloud-sdk/install.sh
+
+# Update the gcloud CLI
+gcloud components update
+# Authenticate with your Google account
+gcloud auth login
+
+# view project ids with
+gcloud projects list
+
+# Set your active Google Cloud project
+gcloud config set project PROJECT_ID
+
+# enable required apis
+gcloud services enable artifactregistry.googleapis.com cloudbuild.googleapis.com run.googleapis.com logging.googleapis.com
+# grant the builder role on your service acct
+gcloud projects add-iam-policy-binding $(gcloud config get-value project) \
+  --member="serviceAccount:$(gcloud projects describe $(gcloud config get-value project) --format='value(projectNumber)')-compute@developer.gserviceaccount.com" \
+  --role="roles/storage.objectViewer"
+
+# deploy the facilitator
+gcloud run compose up docker-compose.yml \
+  --region us-central1
+
+gcloud run deploy sepolia-x402f-facilitator \
+  --source . \
+  --region us-central1 \
+  --allow-unauthenticated
+```
+
 
 ## License 
 
