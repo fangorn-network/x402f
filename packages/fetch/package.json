@@ -1,6 +1,6 @@
 {
   "name": "@fangorn-network/fetch",
-  "version": "2026.04.27",
+  "version": "2026.07.27",
   "description": "",
   "type": "module",
   "main": "./dist/index.js",
