@@ -1,6 +1,6 @@
 {
   "name": "@fangorn-network/facilitator",
-  "version": "2026.04.24",
+  "version": "2026.07.27",
   "description": "The x402f facilitator",
   "type": "module",
   "main": "./dist/index.js",
@@ -21,7 +21,6 @@
   "license": "ISC",
   "dependencies": {
     "@fangorn-network/sdk": "catalog:",
-    "@semaphore-protocol/identity": "^4.14.2",
     "@x402/core": "catalog:",
     "@x402/evm": "catalog:",
     "@x402/fetch": "catalog:",

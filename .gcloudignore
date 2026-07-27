@@ -1,0 +1,6 @@
+.git
+.gitignore
+#!include:.gitignore
+node_modules/
+**/node_modules/**
+**/node_modules/**
