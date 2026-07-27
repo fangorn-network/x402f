@@ -56,20 +56,13 @@ gcloud projects list
 gcloud config set project PROJECT_ID
 
 # enable required apis
-gcloud services enable artifactregistry.googleapis.com cloudbuild.googleapis.com run.googleapis.com logging.googleapis.com
-# grant the builder role on your service acct
 gcloud projects add-iam-policy-binding $(gcloud config get-value project) \
   --member="serviceAccount:$(gcloud projects describe $(gcloud config get-value project) --format='value(projectNumber)')-compute@developer.gserviceaccount.com" \
-  --role="roles/storage.objectViewer"
+  --role="roles/cloudbuild.builds.builder"
 
-# deploy the facilitator
+# deploy the facilitator (docker)
 gcloud run compose up docker-compose.yml \
   --region us-central1
-
-gcloud run deploy sepolia-x402f-facilitator \
-  --source . \
-  --region us-central1 \
-  --allow-unauthenticated
 ```
 
 
