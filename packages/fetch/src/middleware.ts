@@ -3,11 +3,12 @@ import { ExactEvmScheme } from "@x402/evm/exact/client";
 import { type AppConfig, Fangorn } from "@fangorn-network/sdk";
 import { wrapFetchWithPaymentFromConfig } from "@x402/fetch";
 import { type ClientEvmSigner } from "@x402/evm";
-import { SettlementRegistry } from "@fangorn-network/sdk/lib/registries/settlement-registry/index.js";
 import { privateKeyToAccount } from "viem/accounts";
 import { Identity } from "@semaphore-protocol/identity";
 import { FangornMiddlewareConfig, type FetchResourceOptions, type FetchResourceResult } from "./types.js";
 import { DataSourceRegistry } from "@fangorn-network/sdk/lib/registries/datasource-registry/index.js";
+import { poseidon2 } from "poseidon-lite";
+import { SettlementRegistry } from "@fangorn-network/sdk/lib/registries/settlement-registry/index.js";
 
 function createSignerFromWallet(walletClient: WalletClient, config: AppConfig): ClientEvmSigner {
     const account = walletClient.account;
@@ -125,32 +126,39 @@ export class FangornX402Middleware {
 
             const resourceId = DataSourceRegistry.resourceIdLocal(owner, schemaId, name);
 
-            //TODO: move to new function
+            //TODO: move to new function?
             {
-                // if already settled, skip payment and decrypt directly
                 const alreadySettled = await this.fangorn.getSettlementRegistry().isSettled(
                     this.stealthAddress,
                     resourceId,
-                )
+                );
 
-                if (alreadySettled && nullifierHash) {
+                if (alreadySettled) {
+                    console.log( 'already settled for the resource')
+                    // Recover the nullifier locally if the caller didn't pass one.
+                    // The hash is deterministic from (identity, resourceId), 
+                    // so a wiped cache is just a cold-start
+                    const nh = nullifierHash ?? (await computeNullifier(
+                        this.fangorn.getSettlementRegistry(),
+                        this.identity,
+                        resourceId,
+                    )).toString();
+
+                    console.log('computed the nullifierHash ' + nh)
                     const stealthWalletClient = createWalletClient({
                         account: privateKeyToAccount(this.stealthKey),
                         chain: this.fetchConfig.config.chain,
                         transport: http(this.fetchConfig.config.rpcUrl),
-                    })
+                    });
+
                     const result = await this.fangorn.consumer.fetchField(
-                        owner,
-                        schemaId,
-                        name,
-                        field,
-                        nullifierHash,
+                        owner, schemaId, name, field,
+                        nh,
                         stealthWalletClient,
                     );
 
-                    return { success: true, data: result.data }
+                    return { success: true, data: result.data, paymentResponse: nh };
                 }
-
             }
 
             const price = await this.fangorn.getSettlementRegistry().getPrice(resourceId);
@@ -287,4 +295,16 @@ async function deriveIdentitySecret(walletClient: WalletClient): Promise<Hex> {
         message,
     })
     return keccak256(toBytes(signature))
+}
+
+async function computeNullifier(
+    settlement: SettlementRegistry,
+    identity: Identity,
+    resourceId: Hex,
+): Promise<bigint> {
+    const groupId = await settlement.getGroupId(resourceId);
+    if (groupId === 0n) {
+        throw new Error(`No group for resource ${resourceId}`);
+    }
+    return poseidon2([groupId, identity.secretScalar]);
 }
