@@ -6,3 +6,5 @@ lib
 service-account.json
 **/key.json
 deploy.md
+
+**/venv
