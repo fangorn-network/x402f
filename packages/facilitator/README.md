@@ -39,9 +39,7 @@ To run as a docker image, configure env vars and then, from the root, run `docke
 
 ``` sh
 # install gcloud cli
-# Update system packages and install prerequisites
 sudo apt-get update
-
 curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-x86_64.tar.gz
 tar -xf google-cloud-cli-linux-x86_64.tar.gz
 ./google-cloud-sdk/install.sh
