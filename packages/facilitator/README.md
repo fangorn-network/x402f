@@ -61,7 +61,7 @@ gcloud projects add-iam-policy-binding $(gcloud config get-value project) \
   --role="roles/cloudbuild.builds.builder"
 
 # deploy the facilitator (docker)
-gcloud run compose up docker-compose.yml \
+gcloud run compose up --build docker-compose.yml \
   --region us-central1
 ```
 

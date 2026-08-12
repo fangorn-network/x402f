@@ -10,11 +10,23 @@ import { type FacilitatorEvmSigner } from "@x402/evm";
 import {
     createPublicClient,
     createWalletClient,
+    hexToBytes,
     http,
     type Chain,
     type Hex,
 } from "viem";
 import { type Address, privateKeyToAccount } from "viem/accounts";
+
+/** hookData → the `uint8[]` the Stylus registry actually declares. Accepts the
+ *  hex string clients send ("0x" when there is no hook) or an already-widened
+ *  array; anything absent settles to empty. */
+function toByteArray(hookData: unknown): readonly number[] {
+    if (Array.isArray(hookData)) return hookData.map(Number);
+    if (typeof hookData === "string" && hookData.startsWith("0x")) {
+        return Array.from(hexToBytes(hookData as Hex));
+    }
+    return [];
+}
 
 // Full ABI for the on-chain writes the facilitator relays. The register/settle
 // logic lives entirely in the Stylus SettlementRegistry now (the SDK no longer
@@ -53,7 +65,14 @@ export const SETTLEMENT_REGISTRY_ABI = [
             { name: "nullifier", type: "uint256" },
             { name: "message", type: "uint256" },
             { name: "points", type: "uint256[8]" },
-            { name: "hookData", type: "bytes" },
+            // uint8[], NOT bytes. The registry is a Stylus contract and this
+            // parameter is a Rust `Vec<u8>`, which stylus exports as uint8[] —
+            // see `cargo run --features export-abi` in contracts/settlement_registry.
+            // Declaring it `bytes` changes the selector (0xf251249d instead of
+            // 0x59f52fea), so the call hits no function at all and the Stylus
+            // router reverts with EMPTY data — no custom error to decode, which
+            // reads like a failed proof rather than a wrong signature.
+            { name: "hookData", type: "uint8[]" },
         ],
         outputs: [],
     },
@@ -174,7 +193,15 @@ export class FangornScheme implements SchemeNetworkFacilitator {
                         chain: this.chain,
                         account: privateKeyToAccount(this.privateKey),
                     });
-                    await this.publicClient.waitForTransactionReceipt({ hash });
+                    // waitForTransactionReceipt resolves on a REVERTED tx too —
+                    // it only throws if the tx never lands. Without this check a
+                    // revert is reported as a successful register, and the buyer
+                    // finds out later when the gate says they never paid.
+                    const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
+                    // Not the AlreadyRegistered path: writeContract estimates gas
+                    // first, so that revert surfaces as a throw below, and
+                    // this.lock serializes registers so two can't race into it.
+                    if (receipt.status !== "success") throw new Error(`register reverted on-chain (tx ${hash})`);
                 });
             } catch (e) {
                 const msg = (e as Error).message;
@@ -224,13 +251,22 @@ export class FangornScheme implements SchemeNetworkFacilitator {
                         BigInt(extra.nullifier),
                         BigInt(extra.message),
                         (extra.points as (string | bigint)[]).map(BigInt) as unknown as readonly [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint],
-                        (extra.hookData ?? "0x") as Hex,
+                        // Callers send hookData on the wire as a hex string ("0x"
+                        // for the common no-hook case), but the parameter is
+                        // uint8[] — viem will not encode a Hex into that. Widen
+                        // here rather than at every caller, and accept an array
+                        // as-is so a client that already sends one still works.
+                        toByteArray(extra.hookData),
                     ],
                     chain: this.chain,
                     account: privateKeyToAccount(this.privateKey),
                 }),
             );
-            await this.publicClient.waitForTransactionReceipt({ hash });
+            // As in register: a revert resolves here rather than throwing, and an
+            // unchecked one becomes "settle succeeded" followed by the access gate
+            // answering "not settled" — the failure named nowhere near its cause.
+            const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
+            if (receipt.status !== "success") throw new Error(`settle reverted on-chain (tx ${hash})`);
 
             const nullifier = String(extra.nullifier);
             this.nullifiers.set(extra.resourceId as Hex, nullifier);
