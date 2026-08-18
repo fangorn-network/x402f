@@ -16,6 +16,10 @@ import {
     type Hex,
 } from "viem";
 import { type Address, privateKeyToAccount } from "viem/accounts";
+// Subpath import, not the package root: the root re-exports the SDK's crypto
+// module, and this package's @noble/curves resolves against an incompatible
+// @noble/hashes that throws on load. The ABI file imports nothing.
+import { SETTLEMENT_REGISTRY_ABI } from "@fangorn-network/sdk/lib/contracts/settlement-registry/abi.js";
 
 /** hookData → the `uint8[]` the Stylus registry actually declares. Accepts the
  *  hex string clients send ("0x" when there is no hook) or an already-widened
@@ -28,72 +32,14 @@ function toByteArray(hookData: unknown): readonly number[] {
     return [];
 }
 
-// Full ABI for the on-chain writes the facilitator relays. The register/settle
-// logic lives entirely in the Stylus SettlementRegistry now (the SDK no longer
-// wraps the write path), so the facilitator is just a gas-paying relayer.
-// Names are camelCased as Stylus exports them; input `name`s are cosmetic —
-// only types + order matter for encoding.
-export const SETTLEMENT_REGISTRY_ABI = [
-    {
-        name: "register",
-        type: "function",
-        stateMutability: "payable",
-        inputs: [
-            { name: "resourceId", type: "bytes32" },
-            { name: "identityCommitment", type: "uint256" },
-            { name: "from", type: "address" },
-            { name: "to", type: "address" },
-            { name: "amount", type: "uint256" },
-            { name: "validAfter", type: "uint256" },
-            { name: "validBefore", type: "uint256" },
-            { name: "nonce", type: "bytes32" },
-            { name: "v", type: "uint8" },
-            { name: "r", type: "bytes32" },
-            { name: "s", type: "bytes32" },
-        ],
-        outputs: [],
-    },
-    {
-        name: "settle",
-        type: "function",
-        stateMutability: "nonpayable",
-        inputs: [
-            { name: "resourceId", type: "bytes32" },
-            { name: "stealthAddress", type: "address" },
-            { name: "merkleTreeDepth", type: "uint256" },
-            { name: "merkleTreeRoot", type: "uint256" },
-            { name: "nullifier", type: "uint256" },
-            { name: "message", type: "uint256" },
-            { name: "points", type: "uint256[8]" },
-            // uint8[], NOT bytes. The registry is a Stylus contract and this
-            // parameter is a Rust `Vec<u8>`, which stylus exports as uint8[] —
-            // see `cargo run --features export-abi` in contracts/settlement_registry.
-            // Declaring it `bytes` changes the selector (0xf251249d instead of
-            // 0x59f52fea), so the call hits no function at all and the Stylus
-            // router reverts with EMPTY data — no custom error to decode, which
-            // reads like a failed proof rather than a wrong signature.
-            { name: "hookData", type: "uint8[]" },
-        ],
-        outputs: [],
-    },
-    {
-        name: "getPrice",
-        type: "function",
-        stateMutability: "view",
-        inputs: [{ name: "resourceId", type: "bytes32" }],
-        outputs: [{ type: "uint256" }],
-    },
-    {
-        name: "isSettled",
-        type: "function",
-        stateMutability: "view",
-        inputs: [
-            { name: "stealthAddress", type: "address" },
-            { name: "resourceId", type: "bytes32" },
-        ],
-        outputs: [{ type: "bool" }],
-    },
-] as const;
+// The registry ABI comes from the SDK, which generates it from
+// `cargo stylus export-abi --json` — the facilitator used to keep a hand-written
+// copy, and a hand-written copy is exactly how `hookData` got declared `bytes`
+// once. That changed the selector (0xf251249d instead of 0x59f52fea), so the
+// call hit no function at all and the Stylus router reverted with EMPTY data —
+// no custom error to decode, which reads like a failed proof rather than a
+// wrong signature. Re-exported because callers imported it from here.
+export { SETTLEMENT_REGISTRY_ABI };
 
 export type NullifierStore = Map<Hex, string>;
 
@@ -181,7 +127,6 @@ export class FangornScheme implements SchemeNetworkFacilitator {
                             extra.resourceId as Hex,
                             BigInt(extra.identityCommitment),
                             p.from,
-                            p.to,
                             BigInt(p.amount),
                             BigInt(p.validAfter),
                             BigInt(p.validBefore),

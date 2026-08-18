@@ -2,7 +2,7 @@
   "name": "node",
   "type": "module",
   "version": "1.1.0",
-  "description": "Fangorn paid content sale — end-to-end via the x402f facilitator",
+  "description": "Fangorn paid content sale \u2014 end-to-end via the x402f facilitator",
   "main": "index.js",
   "scripts": {
     "start": "tsx --env-file=.env index.ts",
@@ -11,10 +11,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@fangorn-network/sdk": "link:../../../fangorn",
-    "@semaphore-protocol/group": "^4.14.2",
-    "@semaphore-protocol/identity": "^4.14.2",
-    "@semaphore-protocol/proof": "^4.14.2"
+    "@fangorn-network/fetch": "workspace:*",
+    "@fangorn-network/sdk": "link:../../../fangorn"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",

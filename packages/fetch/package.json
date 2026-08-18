@@ -1,6 +1,6 @@
 {
   "name": "@fangorn-network/fetch",
-  "version": "2026.07.27",
+  "version": "2026.7.27",
   "description": "",
   "type": "module",
   "main": "./dist/index.js",
@@ -18,7 +18,7 @@
   ],
   "scripts": {
     "build": "tsdown",
-    "test": "echo \"Error: no test specified\" && exitP 1"
+    "test": "echo \"no tests\" && exit 0"
   },
   "keywords": [],
   "author": "",
@@ -27,15 +27,16 @@
     "access": "public"
   },
   "dependencies": {
-    "@fangorn-network/sdk": "catalog:",
+    "@semaphore-protocol/group": "^4.14.2",
     "@semaphore-protocol/identity": "^4.14.2",
-    "@x402/core": "catalog:",
-    "@x402/evm": "catalog:",
-    "@x402/fetch": "catalog:",
+    "@semaphore-protocol/proof": "^4.14.2",
     "poseidon-lite": "^0.3.0"
   },
   "devDependencies": {
     "tsdown": "^0.21.1",
     "viem": "2.47.1"
+  },
+  "peerDependencies": {
+    "viem": "^2.0.0"
   }
 }
