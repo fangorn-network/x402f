@@ -1,9 +1,8 @@
 packages:
   - packages/*
-  - examples/*
 
 catalog:
-  '@fangorn-network/sdk': 2026.7.14.0
+  '@fangorn-network/sdk': 2026.08.18-dev
   '@types/cors': ^2.8.19
   '@types/express': ^5.0.6
   '@x402/core': ^2.5.0

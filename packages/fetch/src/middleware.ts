@@ -1,310 +1,194 @@
-import { createPublicClient, createWalletClient, encodePacked, http, keccak256, toBytes, toHex, type Address, type Hex, type WalletClient } from "viem";
-import { ExactEvmScheme } from "@x402/evm/exact/client";
-import { type AppConfig, Fangorn } from "@fangorn-network/sdk";
-import { wrapFetchWithPaymentFromConfig } from "@x402/fetch";
-import { type ClientEvmSigner } from "@x402/evm";
+// The buyer's whole path in one call: read the resource, pay for it if needed,
+// prove the payment anonymously, and decrypt what comes back.
+//
+//   getUri/getPrice/getOwner/isDisabled   what am I buying, from whom
+//   POST /verify  → register(…)           pay the owner, join the resource's group
+//   POST /settle  → settle(…)             prove membership, record the stealth address
+//   POST /access                          the worker releases the DEK
+//
+// The buyer's wallet signs; the facilitator pays every gas fee. The stealth
+// address that appears on-chain is derived from the identity secret and is not
+// linkable to the wallet that paid.
+
+import { createPublicClient, createWalletClient, http, type Address, type Hex, type PublicClient } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { Identity } from "@semaphore-protocol/identity";
-import { FangornMiddlewareConfig, type FetchResourceOptions, type FetchResourceResult } from "./types.js";
-import { DataSourceRegistry } from "@fangorn-network/sdk/lib/registries/datasource-registry/index.js";
-import { poseidon2 } from "poseidon-lite";
-import { SettlementRegistry } from "@fangorn-network/sdk/lib/registries/settlement-registry/index.js";
+import type { Identity } from "@semaphore-protocol/identity";
+import { downloadAndDecrypt, unpackUri } from "./access.js";
+import {
+    buildSettleProof,
+    deriveBuyer,
+    freePayment,
+    nullifierFor,
+    resourceIdOf,
+    signTransferAuth,
+} from "./payment.js";
+import type {
+    FangornMiddlewareConfig,
+    FetchResourceOptions,
+    FetchResourceResult,
+    ResourceRef,
+} from "./types.js";
 
-function createSignerFromWallet(walletClient: WalletClient, config: AppConfig): ClientEvmSigner {
-    const account = walletClient.account;
-    if (!account) throw new Error("WalletClient must have an account attached");
+const REGISTRY_READ_ABI = [
+    { name: "getUri", type: "function", stateMutability: "view", inputs: [{ type: "bytes32" }], outputs: [{ type: "string" }] },
+    { name: "getPrice", type: "function", stateMutability: "view", inputs: [{ type: "bytes32" }], outputs: [{ type: "uint256" }] },
+    { name: "getOwner", type: "function", stateMutability: "view", inputs: [{ type: "bytes32" }], outputs: [{ type: "address" }] },
+    { name: "isDisabled", type: "function", stateMutability: "view", inputs: [{ type: "bytes32" }], outputs: [{ type: "bool" }] },
+    {
+        name: "isSettled",
+        type: "function",
+        stateMutability: "view",
+        inputs: [{ type: "address" }, { type: "bytes32" }],
+        outputs: [{ type: "bool" }],
+    },
+] as const;
 
-    const publicClient = createPublicClient({
-        chain: walletClient.chain,
-        transport: http(config.rpcUrl),
-    });
-
-    return {
-        address: account.address,
-        signTypedData: async (message) => walletClient.signTypedData({
-            account: walletClient.account!.type === "local" ? account : account.address,
-            domain: message.domain as any,
-            types: message.types as any,
-            primaryType: message.primaryType,
-            message: message.message,
-        }),
-        readContract: (params) => publicClient.readContract(params as any),
-    };
-}
+const resolve = (ref: ResourceRef): Hex =>
+    "resourceId" in ref ? ref.resourceId : resourceIdOf(ref.publisher, ref.uid);
 
 export class FangornX402Middleware {
-    private readonly fangorn: Fangorn;
-    private readonly fetchWithPayment: typeof fetch;
-    private readonly walletClient: WalletClient;
-    private readonly identity: Identity;
-    private readonly stealthKey: Hex;
-    private readonly stealthAddress: Address;
-    private readonly fetchConfig: FangornMiddlewareConfig;
-
     private constructor(
-        fangorn: Fangorn,
-        fetchWithPayment: typeof fetch,
-        walletClient: WalletClient,
-        identity: Identity,
-        stealthKey: Hex,
-        stealthAddress: Address,
-        fetchConfig: FangornMiddlewareConfig,
-    ) {
-        this.fangorn = fangorn;
-        this.fetchWithPayment = fetchWithPayment;
-        this.walletClient = walletClient;
-        this.identity = identity;
-        this.stealthKey = stealthKey;
-        this.stealthAddress = stealthAddress;
-        this.fetchConfig = fetchConfig;
-    }
+        private readonly config: Required<Pick<FangornMiddlewareConfig, "usdcDomainName" | "usdcDomainVersion">> &
+            FangornMiddlewareConfig,
+        private readonly publicClient: PublicClient,
+        private readonly identity: Identity,
+        private readonly stealthKey: Hex,
+        readonly stealthAddress: Address,
+    ) {}
 
+    /** Derives the buyer's Semaphore identity, which costs one wallet signature.
+     *  Everything after that is deterministic from it. */
     static async create(options: FangornMiddlewareConfig): Promise<FangornX402Middleware> {
-        const walletClient = options.walletClient
-        // we only need to read from storage
-        const fangorn = await Fangorn.create({
-            walletClient,
-            config: options.config,
-            domain: options.domain,
-        });
-
-        const fetchWithPayment = wrapFetchWithPaymentFromConfig(
-            globalThis.fetch.bind(globalThis),
-            {
-                schemes: [{
-                    network: `eip155:${options.config.caip2}`,
-                    client: new ExactEvmScheme(createSignerFromWallet(walletClient, options.config)),
-                }],
-            },
-        );
-
-        // Derive identity + stealth key
-        const identitySecret = await deriveIdentitySecret(walletClient);
-        const identity = new Identity(identitySecret);
-        const stealthKey = keccak256(
-            encodePacked(
-                ['string', 'bytes32'],
-                ['fangorn:stealth:', toHex(identity.secretScalar, { size: 32 })],
-            )
-        ) as Hex;
-
-        const stealthAddress = privateKeyToAccount(stealthKey).address;
+        const { identity, stealthKey, stealthAddress } = await deriveBuyer(options.walletClient);
+        const publicClient = createPublicClient({
+            chain: options.chain,
+            transport: http(options.rpcUrl),
+        }) as PublicClient;
 
         return new FangornX402Middleware(
-            fangorn,
-            fetchWithPayment,
-            walletClient,
+            { usdcDomainName: "USD Coin", usdcDomainVersion: "2", ...options },
+            publicClient,
             identity,
             stealthKey,
             stealthAddress,
-            options,
         );
     }
 
-    async fetchResource(options: FetchResourceOptions): Promise<FetchResourceResult> {
-        const field = "audio";
-        const usdcContractAddress = "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d" as Address;
-        const usdcDomainName = "USD Coin";
-        const facilitatorAddress = "0x147c24c5Ea2f1EE1ac42AD16820De23bBba45Ef6" as Address;
-
-        let {
-            owner,
-            schemaName,
-            name,
-            baseUrl = "http://127.0.0.1:30333",
-            authToken,
-            nullifierHash,
-        } = options;
-
+    /**
+     * Fetch and decrypt a resource, paying for it first if this identity has not
+     * settled it before.
+     *
+     * A resource already settled in an earlier session is NOT paid for again:
+     * the settlement is on-chain and permanent, and the nullifier that unlocks
+     * the worker is recomputable from the identity, so a wiped cache costs
+     * nothing but a read.
+     */
+    async fetchResource(ref: ResourceRef, options: FetchResourceOptions = {}): Promise<FetchResourceResult> {
         try {
-            let schemaId: Hex;
-            try {
-                schemaId = await this.fangorn.getSchemaRegistry().schemaId(schemaName);
-            } catch {
-                throw new Error(`Schema "${schemaName}" not found on-chain.`);
+            const resourceId = resolve(ref);
+            const registry = { address: this.config.registryAddress, abi: REGISTRY_READ_ABI } as const;
+            const read = <T>(functionName: string, args: readonly unknown[]) =>
+                this.publicClient.readContract({ ...registry, functionName, args } as never) as Promise<T>;
+
+            const [uri, price, owner, disabled, settled] = await Promise.all([
+                read<string>("getUri", [resourceId]),
+                read<bigint>("getPrice", [resourceId]),
+                read<Address>("getOwner", [resourceId]),
+                read<boolean>("isDisabled", [resourceId]),
+                read<boolean>("isSettled", [this.stealthAddress, resourceId]),
+            ]);
+
+            if (owner === "0x0000000000000000000000000000000000000000") {
+                return { success: false, error: `resource ${resourceId} does not exist` };
             }
+            // The registry reverts on register/settle for a disabled resource and
+            // the worker refuses the DEK, so paying first would only lose money.
+            if (disabled) return { success: false, error: `resource ${resourceId} is disabled` };
 
-            const resourceId = DataSourceRegistry.resourceIdLocal(owner, schemaId, name);
+            const nullifier = settled
+                ? nullifierFor(this.identity, resourceId).toString()
+                : await this.payAndSettle(resourceId, owner, price);
 
-            //TODO: move to new function?
-            {
-                const alreadySettled = await this.fangorn.getSettlementRegistry().isSettled(
-                    this.stealthAddress,
-                    resourceId,
-                );
-
-                if (alreadySettled) {
-                    console.log( 'already settled for the resource')
-                    // Recover the nullifier locally if the caller didn't pass one.
-                    // The hash is deterministic from (identity, resourceId), 
-                    // so a wiped cache is just a cold-start
-                    const nh = nullifierHash ?? (await computeNullifier(
-                        this.fangorn.getSettlementRegistry(),
-                        this.identity,
-                        resourceId,
-                    )).toString();
-
-                    console.log('computed the nullifierHash ' + nh)
-                    const stealthWalletClient = createWalletClient({
-                        account: privateKeyToAccount(this.stealthKey),
-                        chain: this.fetchConfig.config.chain,
-                        transport: http(this.fetchConfig.config.rpcUrl),
-                    });
-
-                    const result = await this.fangorn.consumer.fetchField(
-                        owner, schemaId, name, field,
-                        nh,
-                        stealthWalletClient,
-                    );
-
-                    return { success: true, data: result.data, paymentResponse: nh };
-                }
-            }
-
-            const price = await this.fangorn.getSettlementRegistry().getPrice(resourceId);
-
-            // fetch facilitator fee rate
-            const feeRes = await fetch(`${baseUrl}/fee`)
-            const { feePercent } = await feeRes.json()
-            const feeBps = BigInt(Math.round(feePercent * 100))
-            const fee = (price * feeBps) / 10000n
-            const totalAmount = price + fee
-
-            const authHeaders = authToken
-                ? { "Content-Type": "application/json", "Authorization": `Bearer ${authToken}` }
-                : { "Content-Type": "application/json" };
-
-            // sign for price + fee
-            const clientPayment = await this.fangorn.consumer.prepareRegister({
-                walletClient: this.walletClient,
-                paymentRecipient: facilitatorAddress,
-                amount: totalAmount,
-                usdcAddress: usdcContractAddress,
-                usdcDomainName,
-                usdcDomainVersion: "2",
-            });
-
-            const verifyRes = await fetch(`${baseUrl}/verify`, {
-                method: "POST",
-                headers: authHeaders,
-                body: JSON.stringify({
-                    paymentPayload: { x402Version: 2 },
-                    paymentRequirements: {
-                        scheme: "exact",
-                        network: `eip155:${this.fetchConfig.config.caip2}`,
-                        amount: totalAmount.toString(),
-                        asset: usdcContractAddress,
-                        payTo: facilitatorAddress,
-                        extra: {
-                            name: usdcDomainName,
-                            version: "2",
-                            resourceId,
-                            resourcePrice: price.toString(), // raw price, before fee
-                            clientPayment,
-                            identityCommitment: this.identity.commitment.toString(),
-                            stealthAddress: this.stealthAddress,
-                        },
-                    },
-                }, (_, v) => typeof v === "bigint" ? v.toString() : v),
-            });
-
-            const verifyBody = await verifyRes.json();
-            if (!verifyBody.isValid) {
-                return { success: false, error: `Verify failed: ${verifyBody.invalidReason}` };
-            }
-
-            const preparedSettle = await this.fangorn.consumer.prepareSettle({
+            const resolved = unpackUri(uri);
+            const data = await downloadAndDecrypt({
                 resourceId,
-                identity: this.identity,
-                stealthAddress: this.stealthAddress,
+                workerUrl: options.workerUrl ?? resolved.workerUrl,
+                signer: privateKeyToAccount(this.stealthKey),
+                nullifier: `0x${BigInt(nullifier).toString(16)}` as Hex,
+                expectedPlaintextHash: resolved.plaintextHash,
             });
 
-            const settleRes = await fetch(`${baseUrl}/settle`, {
-                method: "POST",
-                headers: authHeaders,
-                body: JSON.stringify({
-                    paymentPayload: { x402Version: 2 },
-                    paymentRequirements: {
-                        scheme: "exact",
-                        network: `eip155:${this.fetchConfig.config.caip2}`,
-                        amount: totalAmount.toString(),
-                        asset: usdcContractAddress,
-                        payTo: facilitatorAddress,
-                        extra: {
-                            name: usdcDomainName,
-                            version: "2",
-                            resourceId,
-                            preparedSettle,
-                            stealthAddress: this.stealthAddress,
-                        },
-                    },
-                }, (_, v) => typeof v === "bigint" ? v.toString() : v),
-            });
-
-            const settleBody = await settleRes.json();
-            if (!settleBody.success) {
-                return { success: false, error: `Settle failed: ${settleBody.errorReason}` };
-            }
-
-            nullifierHash = settleBody.extensions.nullifier;
-
-            const stealthWalletClient = createWalletClient({
-                account: privateKeyToAccount(this.stealthKey),
-                chain: this.fetchConfig.config.chain,
-                transport: http(this.fetchConfig.config.rpcUrl),
-            });
-
-            const result = await this.fangorn.consumer.fetchField(
-                owner,
-                schemaId,
-                name,
-                field,
-                nullifierHash,
-                stealthWalletClient,
-            );
-
-            return {
-                success: true,
-                data: result.data,
-                paymentResponse: nullifierHash
-            };
-
+            return { success: true, data, nullifier, alreadySettled: settled };
         } catch (error) {
-            return {
-                success: false,
-                error: error instanceof Error ? error.message : String(error),
-            };
+            return { success: false, error: error instanceof Error ? error.message : String(error) };
         }
     }
 
-    // helpers
-    // todo: unsafe
-    getAddress(): Hex {
-        return this.walletClient.account!.address;
+    /** register → settle through the facilitator. Returns the proof's nullifier. */
+    private async payAndSettle(resourceId: Hex, owner: Address, price: bigint): Promise<string> {
+        const payment =
+            price > 0n
+                ? await signTransferAuth(this.config.walletClient, {
+                      to: owner,
+                      amount: price,
+                      chain: this.config.chain,
+                      usdcAddress: this.config.usdcAddress,
+                      usdcDomainName: this.config.usdcDomainName,
+                      usdcDomainVersion: this.config.usdcDomainVersion,
+                  })
+                : freePayment(this.config.walletClient.account!.address);
+
+        const verify = await this.postExtra("/verify", {
+            resourceId,
+            identityCommitment: this.identity.commitment.toString(),
+            payment,
+        });
+        if (!verify.isValid) throw new Error(`verify (register) failed: ${verify.invalidReason}`);
+
+        const proof = await buildSettleProof({
+            publicClient: this.publicClient,
+            registry: this.config.registryAddress,
+            identity: this.identity,
+            resourceId,
+            stealthAddress: this.stealthAddress,
+            fromBlock: this.config.fromBlock,
+        });
+
+        const settle = await this.postExtra("/settle", proof);
+        if (!settle.success) throw new Error(`settle (claim) failed: ${settle.errorReason}`);
+        return String(settle.extensions.nullifier);
     }
 
-    getPaymentFetch(): typeof fetch {
-        return this.fetchWithPayment;
+    /** The x402 envelope the facilitator expects; the Fangorn fields ride in `extra`. */
+    private async postExtra(path: string, extra: object) {
+        const res = await fetch(`${this.config.facilitatorUrl.replace(/\/$/, "")}${path}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                ...(this.config.authToken ? { Authorization: `Bearer ${this.config.authToken}` } : {}),
+            },
+            body: JSON.stringify(
+                {
+                    paymentPayload: { x402Version: 2 },
+                    paymentRequirements: {
+                        scheme: "exact",
+                        network: `eip155:${this.config.chain.id}`,
+                        extra,
+                    },
+                },
+                (_, v) => (typeof v === "bigint" ? v.toString() : v),
+            ),
+        });
+        if (!res.ok) throw new Error(`${path} failed: ${res.status} ${await res.text()}`);
+        return res.json();
     }
-}
 
-async function deriveIdentitySecret(walletClient: WalletClient): Promise<Hex> {
-    const message = 'fangorn:identity:v1'
-    const signature = await walletClient.signMessage({
-        account: walletClient.account!,
-        message,
-    })
-    return keccak256(toBytes(signature))
-}
-
-async function computeNullifier(
-    settlement: SettlementRegistry,
-    identity: Identity,
-    resourceId: Hex,
-): Promise<bigint> {
-    const groupId = await settlement.getGroupId(resourceId);
-    if (groupId === 0n) {
-        throw new Error(`No group for resource ${resourceId}`);
+    /** A wallet client for the stealth account — the identity the worker gates on. */
+    stealthWalletClient() {
+        return createWalletClient({
+            account: privateKeyToAccount(this.stealthKey),
+            chain: this.config.chain,
+            transport: http(this.config.rpcUrl),
+        });
     }
-    return poseidon2([groupId, identity.secretScalar]);
 }

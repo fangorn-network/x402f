@@ -113,10 +113,12 @@ export function getFacilitator(): x402Facilitator {
         if (!privkey) {
             throw new Error("❌ FACILITATOR_EVM_PRIVATE_KEY environment variable is required");
         }
-        const registryAddress = process.env.SETTLEMENT_REGISTRY_ADDR;
-        if (!registryAddress) {
-            throw new Error("❌ SETTLEMENT_REGISTRY_ADDR environment variable is required");
-        }
+        // The SDK's config is the source of truth for the deployment. The env
+        // var stays as an override for pointing at a registry the installed SDK
+        // predates — it used to be required, which meant every redeploy left a
+        // stale address in an .env nobody remembered to update.
+        const registryAddress = (process.env.SETTLEMENT_REGISTRY_ADDR ??
+            FangornConfig.settlementRegistryContractAddress) as Address;
 
         const evmAccount = privateKeyToAccount(privkey as `0x${string}`);
 
@@ -128,7 +130,7 @@ export function getFacilitator(): x402Facilitator {
             FangornConfig,
             `eip155:${FangornConfig.caip2}` as Network,
             evmAccount,
-            registryAddress as Address,
+            registryAddress,
         );
     }
 

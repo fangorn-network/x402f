@@ -10,17 +10,19 @@ The x402 wire protocol is unchanged: clients POST `paymentPayload` + `paymentReq
 
 ###### Verify -> Register
 
-The buyer signs an EIP-3009 `transferWithAuthorization` paying the resource owner the exact price, and includes their Semaphore identity commitment. `/verify` relays a single `register(resourceId, identityCommitment, from, to, amount, …, v, r, s)` call to the registry, which:
+The buyer signs an EIP-3009 `transferWithAuthorization` paying the resource owner the exact price, and includes their Semaphore identity commitment. `/verify` relays a single `register(resourceId, identityCommitment, from, amount, …, v, r, s)` call to the registry, which:
 - runs the buyer's `transferWithAuthorization` (owner is paid directly), and
-- adds the identity commitment to the global Semaphore group.
+- adds the identity commitment to **this resource's** Semaphore group.
+
+There is no `to` parameter: the registry reads the recipient from `resource_owners[resourceId]`, so the buyer cannot direct the payment anywhere else. The signed authorization must therefore name the resource owner as `to` or the transfer reverts. The `payment.to` field is still accepted on the wire and ignored.
 
 A repeat buy that is `AlreadyRegistered` is treated as success (idempotent).
 
-`extra`: `{ resourceId, identityCommitment, payment: { from, to, amount, validAfter, validBefore, nonce, v, r, s } }`.
+`extra`: `{ resourceId, identityCommitment, payment: { from, amount, validAfter, validBefore, nonce, v, r, s } }`.
 
 ###### Settle -> Claim
 
-The buyer builds a Semaphore membership proof off-chain (scope = `resourceId`). `/settle` relays a single `settle(resourceId, stealthAddress, merkleTreeDepth, merkleTreeRoot, nullifier, message, points[8], hookData)` call, which validates the proof on-chain and records the settlement keyed by the buyer's stealth address. The facilitator echoes the proof's `nullifier` back in `extensions.nullifier` — the caller uses it (and its stealth key) to unlock the DEK from the access worker.
+The buyer builds a Semaphore membership proof off-chain over **that resource's group** (scope = `resourceId`). `/settle` relays a single `settle(resourceId, stealthAddress, merkleTreeDepth, merkleTreeRoot, nullifier, message, points[8], hookData)` call, which validates the proof on-chain and records the settlement keyed by the buyer's stealth address. The facilitator echoes the proof's `nullifier` back in `extensions.nullifier` — the caller uses it (and its stealth key) to unlock the DEK from the access worker.
 
 `extra`: `{ resourceId, stealthAddress, merkleTreeDepth, merkleTreeRoot, nullifier, message, points, hookData? }`.
 
@@ -61,9 +63,9 @@ gcloud projects add-iam-policy-binding $(gcloud config get-value project) \
   --role="roles/cloudbuild.builds.builder"
 
 # deploy the facilitator (docker)
-gcloud run compose up docker-compose.yml \
+gcloud run compose up --build docker-compose.yml \
   --region us-central1
-```
+``` 
 
 
 ## License 
