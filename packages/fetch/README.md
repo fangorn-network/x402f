@@ -1,69 +1,87 @@
 # x402f fetch
 
-The package allows callers to pay for data secured with Fangorn using x402f's trust-minimized payment rails. Using x402f fetch allows callers to achieve **private purchases** and **private retrieval** of data, with **no linkage** between buyer identity and resource stored onchain. 
+Pay for Fangorn-secured data and read it back, with **no on-chain link between
+the buyer and the resource they read**. The wallet that pays and the address the
+access gate sees are different addresses, and nothing on-chain connects them.
 
-A wrapper around x402/fetch that:
-- calls the x402f access control server
-- decrypts results using [fangorn](https://github.com/fangorn-network/fangorn)
+The buyer's whole path is one call:
+
+```
+getUri/getPrice/getOwner/isDisabled   what am I buying, from whom
+POST /verify → register(…)            pay the owner, join the resource's group
+POST /settle → settle(…)              prove membership anonymously
+POST /access                          the worker releases the DEK → decrypt
+```
+
+The buyer's wallet only signs. The [x402f facilitator](../facilitator) relays
+both writes and pays the gas, so the stealth identity never needs funding.
 
 ## Installation
 
-Install the package from npm (using pnpm):
-
-``` sh
+```sh
 pnpm i @fangorn-network/fetch
 ```
 
-## Build
-
-To build the package locally:
-1. install deps from the root by running `pnpm i`
-2. Build with `pnpm build`
-   
 ## Usage
 
-For a full example, see the [node example](../../examples/node/).
-
-### Quickstart
-0. Ensure an x402f facilitator is running and fetch it's public key (e.g. `0x147c24c5Ea2f1EE1ac42AD16820De23bBba45Ef6`).
-
-1. Setup the middleware
-``` js
-const privateKey = getEnv("EVM_PRIVATE_KEY") as Hex;
-const resourceServerUrl = getEnv("RESOURCE_SERVER_URL");
-const domain = "localhost";
+```ts
+import { FangornX402Middleware } from "@fangorn-network/fetch";
+import { arbitrumSepolia } from "viem/chains";
 
 const middleware = await FangornX402Middleware.create({
-    privateKey,
-    config,
-    usdcContractAddress: "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d",
-    usdcDomainName: "USD Coin",
-    facilitatorAddress: "0x147c24c5Ea2f1EE1ac42AD16820De23bBba45Ef6",
-    domain,
-});
-```
-
-2. Fetch resources
-``` js
-// a resource is identified by (owner, schemaName, tag)
-const owner = "0x147c24c5Ea2f1EE1ac42AD16820De23bBba45Ef6" as Address;
-const schemaName = "noagent-fangorn.test.music.v0";
-const tag = "test";
-
-// the caller must have sufficient balance in order to unlock access to the resource
-const result = await middleware.fetchResource({
-    privateKey,
-    owner,
-    schemaName,
-    tag,
-    baseUrl: resourceServerUrl,
+    walletClient,                 // the buyer's wallet; signs, never pays gas
+    chain: arbitrumSepolia,
+    rpcUrl: "https://sepolia-rollup.arbitrum.io/rpc",
+    registryAddress: "0x…",       // SettlementRegistry
+    usdcAddress: "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d",
+    facilitatorUrl: "http://localhost:30333",
 });
 
-// decrypt on success
+// Identify the resource directly, or the way its publisher does — the registry
+// derives resourceId = keccak(publisher ++ uid).
+const result = await middleware.fetchResource({ publisher, uid });
+
 if (result.success) {
-    console.log("Decrypted result:", JSON.stringify(result));
-    process.exit(0)
+    console.log(new TextDecoder().decode(result.data));   // plaintext
 } else {
-    console.error("Failed:", result.error);
+    console.error(result.error);
 }
 ```
+
+`fetchResource` reads the worker URL and the expected plaintext hash from the
+resource's on-chain uri, and throws if the bytes it decrypts do not match that
+hash — a worker cannot serve something else.
+
+### Paying only once
+
+A resource this identity has already settled is **not paid for again**. The
+settlement is permanent on-chain and the nullifier that unlocks the worker is
+recomputable from the identity (`poseidon2([hash(resourceId), secret])`), so a
+wiped cache costs one RPC read, not another purchase. The result reports which
+path ran:
+
+```ts
+const { alreadySettled, nullifier } = await middleware.fetchResource({ resourceId });
+```
+
+### Free resources
+
+A resource priced at 0 still registers — that is how the identity joins the
+resource's group — but nothing is transferred and no authorization is signed.
+
+## Exports
+
+Beyond the middleware, the primitives it is built from are public, for callers
+who want to drive the steps themselves:
+
+- `deriveBuyer`, `signTransferAuth`, `buildSettleProof`, `nullifierFor`, `resourceIdOf`
+- `downloadAndDecrypt`, `accessMessageHash`, `unpackUri`, `sha256Hex`
+
+Publishing (encrypt, upload, `createResource`) is deliberately **not** here — it
+needs the publisher's storage credentials. See the
+[node example](../../examples/node/) for that side.
+
+## Build
+
+1. Install deps from the repo root: `pnpm i`
+2. `pnpm build`

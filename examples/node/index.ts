@@ -1,19 +1,27 @@
-import {
-    createWalletClient,
-    createPublicClient,
-    http,
-    keccak256,
-    stringToBytes,
-    bytesToString,
-    toHex,
-    type Hex,
-    type Address,
-    type PublicClient,
-} from "viem";
+// Sells one piece of encrypted content and buys it back through the x402f
+// facilitator — the whole private-payment loop in one script.
+//
+// The buy side is the `@fangorn-network/fetch` middleware; everything left here
+// is the SELLER's job (encrypt, upload, list on-chain), which no buyer library
+// should be doing.
+//
+// Deployment details come from the SDK, not this file: `FangornConfig` carries
+// the chain, the RPC and the SettlementRegistry address, and the registry itself
+// is asked for its USDC. An .env that names a registry can name a stale one —
+// this is the same object the SDK, the CLI and the facilitator all read.
+
+import { bytesToString, keccak256, stringToBytes, type Address, type Hex, type PublicClient } from "viem";
+import { createPublicClient, createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { arbitrumSepolia } from "viem/chains";
-import { encryptAndUpload, downloadAndDecrypt } from "./settle.js";
-import { deriveBuyer, signTransferAuth, buildSettleProof } from "./paid.js";
+import { FangornX402Middleware } from "@fangorn-network/fetch";
+import {
+    FangornConfig,
+    SettlementRegistryClient,
+    packResourceUri,
+    resourceIdOf,
+} from "@fangorn-network/sdk";
+import { encryptAndUpload } from "./publish.js";
 
 const getEnv = (key: string): string => {
     const value = process.env[key];
@@ -21,133 +29,100 @@ const getEnv = (key: string): string => {
     return value;
 };
 
-const REGISTRY_WRITE_ABI = [
-    {
-        inputs: [
-            { name: "resource_id", type: "bytes32" },
-            { name: "price", type: "uint256" },
-            { name: "uri", type: "string" },
-        ],
-        name: "createResource",
-        outputs: [],
-        stateMutability: "nonpayable",
-        type: "function",
-    },
-] as const;
-
-// uri packs both the worker to fetch from and the plaintext hash to verify
-// against: `${workerUrl}#${plaintextHash}`.
-const packUri = (workerUrl: string, plaintextHash: Hex) => `${workerUrl}#${plaintextHash}`;
-const unpackUri = (uri: string): { workerUrl: string; plaintextHash: Hex } => {
-    const [workerUrl, plaintextHash] = uri.split("#");
-    return { workerUrl, plaintextHash: plaintextHash as Hex };
-};
-
-async function postExtra(baseUrl: string, path: string, extra: object) {
-    const res = await fetch(`${baseUrl}${path}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(
-            {
-                paymentPayload: { x402Version: 2 },
-                paymentRequirements: {
-                    scheme: "exact",
-                    network: `eip155:${arbitrumSepolia.id}`,
-                    extra,
-                },
-            },
-            (_, v) => (typeof v === "bigint" ? v.toString() : v),
-        ),
-    });
-    return res.json();
-}
-
 async function main() {
     const ownerKey = getEnv("EVM_PRIVATE_KEY") as Hex;
     const buyerKey = getEnv("BUYER_PRIVATE_KEY") as Hex;
+
+    // run `wrangler dev --local` under /webworkers/fangorn-access-worker
     const workerUrl = getEnv("WORKER_URL").replace(/\/$/, "");
-    const registry = getEnv("SETTLEMENT_REGISTRY_ADDR") as Address;
-    const usdcAddress = getEnv("USDC_CONTRACT_ADDR") as Address;
-    const usdcDomainName = process.env.USDC_DOMAIN_NAME ?? "USD Coin";
-    const facilitatorUrl = (process.env.FACILITATOR_URL ?? "http://localhost:30333").replace(/\/$/, "");
+    const uploadToken = getEnv("WORKER_UPLOAD_TOKEN");
+    const facilitatorUrl = process.env.FACILITATOR_URL ?? "http://localhost:30333";
     const price = BigInt(process.env.RESOURCE_PRICE ?? "1000"); // USDC base units (6 decimals)
-    const rpcUrl = process.env.VITE_CHAIN_RPC_URL ?? "https://sepolia-rollup.arbitrum.io/rpc";
+
+    // Scalars only from the config. The SDK is installed as a `link:`, so it
+    // resolves viem out of its own node_modules — a second copy of the same
+    // version that TypeScript compares nominally, which makes FangornConfig.chain
+    // "not assignable" to the identical local Chain. Take the chain locally and
+    // assert it is the one the config describes.
+    const chain = arbitrumSepolia;
+    if (chain.id !== FangornConfig.caip2) {
+        throw new Error(`SDK config targets chain ${FangornConfig.caip2}, this example builds for ${chain.id}`);
+    }
+    const rpcUrl = process.env.VITE_CHAIN_RPC_URL ?? FangornConfig.rpcUrl;
+    const registryAddress = (process.env.SETTLEMENT_REGISTRY_ADDR ??
+        FangornConfig.settlementRegistryContractAddress) as Address;
 
     const owner = privateKeyToAccount(ownerKey);
-    const ownerWallet = createWalletClient({ account: owner, chain: arbitrumSepolia, transport: http(rpcUrl) });
+    const ownerWallet = createWalletClient({ account: owner, chain, transport: http(rpcUrl) });
     const buyer = privateKeyToAccount(buyerKey);
-    const buyerWallet = createWalletClient({ account: buyer, chain: arbitrumSepolia, transport: http(rpcUrl) });
-    const publicClient = createPublicClient({ chain: arbitrumSepolia, transport: http(rpcUrl) }) as PublicClient;
+    const buyerWallet = createWalletClient({ account: buyer, chain, transport: http(rpcUrl) });
+    const publicClient = createPublicClient({ chain, transport: http(rpcUrl) }) as PublicClient;
+
+    // The SDK's publisher-side client for the settlement rail. The buyer half
+    // (Semaphore identity, EIP-3009 signature, membership proof) is the fetch
+    // package's job and deliberately not here.
+    // Same two-copies-of-viem story as the chain above: structurally identical
+    // at runtime, nominally distinct to tsc.
+    const settlement = new SettlementRegistryClient(
+        registryAddress,
+        publicClient as never,
+        ownerWallet as never,
+    );
+
+    // The registry names its own settlement token, so there is nothing to keep
+    // in sync: a wrong USDC address in an .env is a signature that verifies
+    // against the wrong domain and a transfer that never happens.
+    const usdcAddress = await settlement.getUsdc();
 
     const name = `demo-episode-${Date.now()}`; // unique so createResource won't collide
     const plaintext = stringToBytes("Hello Fangorn! This is my (encrypted, paid) episode.");
-    const resourceId = keccak256(stringToBytes(name)); // bytes32
+    const uid = keccak256(stringToBytes(name)); // bytes32, the publisher's own id
+    const resourceId = resourceIdOf(owner.address, uid);
 
+    console.log("registry  :", registryAddress);
+    console.log("usdc      :", usdcAddress);
     console.log("resourceId:", resourceId);
     console.log("owner     :", owner.address);
     console.log("buyer     :", buyer.address);
     console.log("price     :", price.toString(), "USDC base units");
 
-    // ── SELL: encrypt → upload {ct, sealed DEK} → createResource(price>0) ──────
-    const { plaintextHash } = await encryptAndUpload({ plaintext, resourceId, workerUrl });
-    const createHash = await ownerWallet.writeContract({
-        address: registry,
-        abi: REGISTRY_WRITE_ABI,
-        functionName: "createResource",
-        args: [resourceId, price, packUri(workerUrl, plaintextHash)],
-        account: owner,
-        chain: arbitrumSepolia,
-    });
-    await publicClient.waitForTransactionReceipt({ hash: createHash });
+    // ── SELL: encrypt → upload {ct, sealed DEK} → createResource ──────────────
+    const { plaintextHash } = await encryptAndUpload({ plaintext, resourceId, workerUrl, uploadToken });
+    const createHash = await settlement.createResource(uid, price, packResourceUri(workerUrl, plaintextHash));
     console.log("committed : createResource tx", createHash);
 
-    // ── BUY: register (pay owner + join group) then settle (prove membership) ──
-    const { identity, stealthKey, stealthAddress } = await deriveBuyer(buyerWallet);
+    // Derived locally above; the registry derives the same id from (owner, uid).
+    // If these ever disagree the buyer pays for one resource and reads another.
+    const onChainId = await settlement.resourceIdFor(owner.address, uid);
+    if (onChainId !== resourceId) throw new Error(`resourceId mismatch: ${resourceId} vs ${onChainId}`);
 
-    // Buyer signs an EIP-3009 authorization paying the owner the exact price.
-    const payment = await signTransferAuth(buyerWallet, {
-        to: owner.address,
-        amount: price,
+    // ── BUY: register → settle → gated decrypt, all inside fetchResource ──────
+    const middleware = await FangornX402Middleware.create({
+        walletClient: buyerWallet,
+        chain,
+        rpcUrl,
+        registryAddress,
         usdcAddress,
-        usdcDomainName,
-        usdcDomainVersion: "2",
+        usdcDomainName: process.env.USDC_DOMAIN_NAME ?? "USD Coin",
+        facilitatorUrl,
     });
+    console.log("stealth   :", middleware.stealthAddress);
 
-    const verify = await postExtra(facilitatorUrl, "/verify", {
-        resourceId,
-        identityCommitment: identity.commitment.toString(),
-        payment,
-    });
-    if (!verify.isValid) throw new Error(`verify (register) failed: ${verify.invalidReason}`);
-    console.log("registered: identity joined the group, owner paid");
+    const result = await middleware.fetchResource({ publisher: owner.address, uid });
+    if (!result.success) throw new Error(result.error);
+    console.log("settled   : nullifier", result.nullifier, result.alreadySettled ? "(already settled)" : "");
 
-    const proof = await buildSettleProof({ publicClient, registry, identity, resourceId, stealthAddress });
-    const settle = await postExtra(facilitatorUrl, "/settle", proof);
-    if (!settle.success) throw new Error(`settle (claim) failed: ${settle.errorReason}`);
-    const nullifier: string = settle.extensions.nullifier;
-    console.log("settled   : tx", settle.transaction, "nullifier", nullifier);
+    console.log("decrypted :", bytesToString(result.data!));
+    if (bytesToString(result.data!) !== bytesToString(plaintext)) throw new Error("roundtrip mismatch");
 
-    // ── ACCESS: download + decrypt, signing with the stealth key so the worker
-    // recovers the settled address and releases the DEK ───────────────────────
-    const uri = await publicClient.readContract({
-        address: registry,
-        abi: [{ name: "getUri", type: "function", stateMutability: "view", inputs: [{ name: "resource_id", type: "bytes32" }], outputs: [{ type: "string" }] }] as const,
-        functionName: "getUri",
-        args: [resourceId],
-    });
-    const resolved = unpackUri(uri as string);
+    // A second fetch must NOT pay again: the settlement is on-chain and the
+    // nullifier is recomputable, so this exercises the already-settled path.
+    const again = await middleware.fetchResource({ resourceId });
+    if (!again.success) throw new Error(`repeat fetch failed: ${again.error}`);
+    if (!again.alreadySettled) throw new Error("repeat fetch paid again — already-settled path is broken");
+    if (again.nullifier !== result.nullifier) throw new Error("recomputed nullifier does not match the proof's");
 
-    const recovered = await downloadAndDecrypt({
-        resourceId,
-        workerUrl: resolved.workerUrl,
-        signer: privateKeyToAccount(stealthKey),
-        nullifier: toHex(BigInt(nullifier)),
-        expectedPlaintextHash: resolved.plaintextHash,
-    });
-
-    console.log("decrypted :", bytesToString(recovered));
-    if (bytesToString(recovered) !== bytesToString(plaintext)) throw new Error("roundtrip mismatch");
-    console.log("✓ paid roundtrip verified (register → settle → gated decrypt)");
+    console.log("✓ paid roundtrip verified (register → settle → gated decrypt, then cached)");
 }
 
 main().catch((e) => {
